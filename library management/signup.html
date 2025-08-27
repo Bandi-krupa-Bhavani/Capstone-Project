@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register | BookVerse</title>
+  <link rel="stylesheet" href="css/signup.css">
+</head>
+<body>
+  <div class="login-container">
+
+    <!-- Left side -->
+    <div class="login-image">
+      <img src="css/assets/images/login image.jpeg" alt="Books">
+      <div class="login-quote">
+        <p>“Every book is a new horizon—open one and start your journey.”</p>
+      </div>
+    </div>
+
+    <!-- Right side form -->
+    <div class="login-form">
+      <h2>Create Account</h2>
+      <p>Sign up to start your BookVerse journey</p>
+
+      <div class="form-box">
+        <div class="input-group">
+          <label for="name">Full Name</label>
+          <input type="text" id="name" placeholder="Enter your name">
+          <span class="error" id="nameError"></span>
+        </div>
+
+        <div class="input-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" placeholder="Enter your email">
+          <span class="error" id="emailError"></span>
+        </div>
+
+        <div class="input-group">
+          <label for="phone">Phone Number</label>
+          <input type="tel" id="phone" placeholder="Enter your phone number">
+          <span class="error" id="phoneError"></span>
+        </div>
+
+        <div class="input-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" placeholder="Enter your password">
+          <span class="error" id="passwordError"></span>
+        </div>
+
+        <div class="input-group">
+          <label for="repassword">Retype Password</label>
+          <input type="password" id="repassword" placeholder="Retype your password">
+          <span class="error" id="repasswordError"></span>
+        </div>
+
+        <button class="btn" id="registerBtn">Register</button>
+      </div>
+
+      <div class="signup-link">
+        <p>Already have an account? <a href="login.html">Sign In</a></p>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const registerBtn = document.getElementById('registerBtn');
+
+    registerBtn.addEventListener('click', function(e){
+      e.preventDefault();
+
+      const name = document.getElementById('name');
+      const email = document.getElementById('email');
+      const phone = document.getElementById('phone');
+      const password = document.getElementById('password');
+      const repassword = document.getElementById('repassword');
+
+      let valid = true;
+
+      // Clear all errors
+      document.querySelectorAll('.error').forEach(e => e.innerText = '');
+
+      // Name
+      if(name.value.trim() === ''){
+        document.getElementById('nameError').innerText = 'Name cannot be empty.';
+        valid = false;
+      } else if(!/^[a-zA-Z\s]+$/.test(name.value.trim())){
+        document.getElementById('nameError').innerText = 'Name can contain only letters.';
+        valid = false;
+      }
+
+      // Email
+      if(email.value.trim() === ''){
+        document.getElementById('emailError').innerText = 'Email cannot be empty.';
+        valid = false;
+      } else if(!/^[a-zA-Z0-9._%+-]+@(gmail\.com|sru\.edu\.in)$/.test(email.value.trim())){
+        document.getElementById('emailError').innerText = 'Email must end with @gmail.com or @sru.edu.in';
+        valid = false;
+      }
+
+      // Phone
+      if(phone.value.trim() === ''){
+        document.getElementById('phoneError').innerText = 'Phone cannot be empty.';
+        valid = false;
+      } else if(!/^[1-9][0-9]{9}$/.test(phone.value.trim())){
+        document.getElementById('phoneError').innerText = 'Phone must be 10 digits and not start with 0';
+        valid = false;
+      }
+
+      // Password
+      if(password.value.trim() === ''){
+        document.getElementById('passwordError').innerText = 'Password cannot be empty.';
+        valid = false;
+      } else if(!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/.test(password.value)){
+        document.getElementById('passwordError').innerText = 'Password must be 8+ chars, include uppercase, lowercase, number & special char';
+        valid = false;
+      }
+
+      // Retype Password
+      if(repassword.value.trim() === ''){
+        document.getElementById('repasswordError').innerText = 'Please retype your password.';
+        valid = false;
+      } else if(repassword.value !== password.value){
+        document.getElementById('repasswordError').innerText = 'Passwords do not match.';
+        valid = false;
+      }
+
+      if(valid){
+        window.location.href = "login.html";
+      }
+    });
+  </script>
+</body>
+</html>
