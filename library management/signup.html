@@ -3,58 +3,60 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Register | BookVerse</title>
+  <title>Sign Up | BookVerse</title>
   <link rel="stylesheet" href="css/signup.css">
 </head>
-<body>
+<body class="login-page">
   <div class="login-container">
 
-    <!-- Left side -->
+    <!-- Left side with image and quote -->
     <div class="login-image">
       <img src="css/assets/images/login image.jpeg" alt="Books">
       <div class="login-quote">
-        <p>“Every book is a new horizon—open one and start your journey.”</p>
+        <p>“A library is not a luxury but one of the necessities of life.”</p>
       </div>
     </div>
 
-    <!-- Right side form -->
+    <!-- Right side signup form -->
     <div class="login-form">
       <h2>Create Account</h2>
       <p>Sign up to start your BookVerse journey</p>
 
-      <div class="form-box">
+      <form id="signupForm">
+
         <div class="input-group">
-          <label for="name">Full Name</label>
-          <input type="text" id="name" placeholder="Enter your name">
-          <span class="error" id="nameError"></span>
+          <label for="fullname">Full Name</label>
+          <input type="text" id="fullname" placeholder="Enter your full name" required>
+          <small class="error" id="fullnameError"></small>
         </div>
 
         <div class="input-group">
           <label for="email">Email</label>
-          <input type="email" id="email" placeholder="Enter your email">
-          <span class="error" id="emailError"></span>
+          <input type="email" id="email" placeholder="Enter your email" required>
+          <small class="error" id="emailError"></small>
         </div>
 
         <div class="input-group">
           <label for="phone">Phone Number</label>
-          <input type="tel" id="phone" placeholder="Enter your phone number">
-          <span class="error" id="phoneError"></span>
+          <input type="tel" id="phone" placeholder="Enter your phone number" required>
+          <small class="error" id="phoneError"></small>
         </div>
 
         <div class="input-group">
           <label for="password">Password</label>
-          <input type="password" id="password" placeholder="Enter your password">
-          <span class="error" id="passwordError"></span>
+          <input type="password" id="password" placeholder="Enter your password" required>
+          <small class="error" id="passwordError"></small>
         </div>
 
         <div class="input-group">
           <label for="repassword">Retype Password</label>
-          <input type="password" id="repassword" placeholder="Retype your password">
-          <span class="error" id="repasswordError"></span>
+          <input type="password" id="repassword" placeholder="Retype your password" required>
+          <small class="error" id="repasswordError"></small>
         </div>
 
-        <button class="btn" id="registerBtn">Register</button>
-      </div>
+        <button type="submit" class="btn" id="registerBtn">Register</button>
+        <p class="success-message" id="successMessage">✅ Registration successful!</p>
+      </form>
 
       <div class="signup-link">
         <p>Already have an account? <a href="login.html">Sign In</a></p>
@@ -63,70 +65,88 @@
 
   </div>
 
+  <!-- JavaScript for real-time validation -->
   <script>
-    const registerBtn = document.getElementById('registerBtn');
+    const form = document.getElementById("signupForm");
+    const successMessage = document.getElementById("successMessage");
+    const registerBtn = document.getElementById("registerBtn");
 
-    registerBtn.addEventListener('click', function(e){
+    function validateField(input, regex, errorId, message) {
+      const errorElement = document.getElementById(errorId);
+      if (!regex.test(input.value.trim())) {
+        errorElement.textContent = message;
+        input.classList.add("error-input");
+        return false;
+      } else {
+        errorElement.textContent = "";
+        input.classList.remove("error-input");
+        return true;
+      }
+    }
+
+    // Live validation events
+    fullname.addEventListener("input", () => 
+      validateField(fullname, /^[A-Za-z ]+$/, "fullnameError", "Only letters are allowed.")
+    );
+    email.addEventListener("input", () => 
+      validateField(email, /^[^ ]+@[^ ]+\.[a-z]{2,3}$/, "emailError", "Enter a valid email address.")
+    );
+    phone.addEventListener("input", () => 
+      validateField(phone, /^[0-9]{10}$/, "phoneError", "Phone number must be 10 digits.")
+    );
+    password.addEventListener("input", () => 
+      validateField(password, /^.{6,}$/, "passwordError", "Password must be at least 6 characters.")
+    );
+    repassword.addEventListener("input", () => {
+      if (repassword.value !== password.value) {
+        repassword.classList.add("error-input");
+        repasswordError.textContent = "Passwords do not match.";
+      } else {
+        repassword.classList.remove("error-input");
+        repasswordError.textContent = "";
+      }
+    });
+
+    // On form submit
+    form.addEventListener("submit", function(e) {
       e.preventDefault();
 
-      const name = document.getElementById('name');
-      const email = document.getElementById('email');
-      const phone = document.getElementById('phone');
-      const password = document.getElementById('password');
-      const repassword = document.getElementById('repassword');
+      const isFullnameValid = validateField(fullname, /^[A-Za-z ]+$/, "fullnameError", "Only letters are allowed.");
+      const isEmailValid = validateField(email, /^[^ ]+@[^ ]+\.[a-z]{2,3}$/, "emailError", "Enter a valid email address.");
+      const isPhoneValid = validateField(phone, /^[0-9]{10}$/, "phoneError", "Phone number must be 10 digits.");
+      const isPasswordValid = validateField(password, /^.{6,}$/, "passwordError", "Password must be at least 6 characters.");
+      const isRepasswordValid = (repassword.value === password.value);
 
-      let valid = true;
-
-      // Clear all errors
-      document.querySelectorAll('.error').forEach(e => e.innerText = '');
-
-      // Name
-      if(name.value.trim() === ''){
-        document.getElementById('nameError').innerText = 'Name cannot be empty.';
-        valid = false;
-      } else if(!/^[a-zA-Z\s]+$/.test(name.value.trim())){
-        document.getElementById('nameError').innerText = 'Name can contain only letters.';
-        valid = false;
+      if (!isRepasswordValid) {
+        repassword.classList.add("error-input");
+        repasswordError.textContent = "Passwords do not match.";
       }
 
-      // Email
-      if(email.value.trim() === ''){
-        document.getElementById('emailError').innerText = 'Email cannot be empty.';
-        valid = false;
-      } else if(!/^[a-zA-Z0-9._%+-]+@(gmail\.com|sru\.edu\.in)$/.test(email.value.trim())){
-        document.getElementById('emailError').innerText = 'Email must end with @gmail.com or @sru.edu.in';
-        valid = false;
-      }
+      if (isFullnameValid && isEmailValid && isPhoneValid && isPasswordValid && isRepasswordValid) {
+        // Show spinner inside button
+        registerBtn.disabled = true;
+        registerBtn.innerHTML = '<span class="spinner"></span> Registering...';
 
-      // Phone
-      if(phone.value.trim() === ''){
-        document.getElementById('phoneError').innerText = 'Phone cannot be empty.';
-        valid = false;
-      } else if(!/^[1-9][0-9]{9}$/.test(phone.value.trim())){
-        document.getElementById('phoneError').innerText = 'Phone must be 10 digits and not start with 0';
-        valid = false;
-      }
+        // Simulate server delay
+        setTimeout(() => {
+          // Disable all inputs
+          document.querySelectorAll("input").forEach(el => el.disabled = true);
 
-      // Password
-      if(password.value.trim() === ''){
-        document.getElementById('passwordError').innerText = 'Password cannot be empty.';
-        valid = false;
-      } else if(!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/.test(password.value)){
-        document.getElementById('passwordError').innerText = 'Password must be 8+ chars, include uppercase, lowercase, number & special char';
-        valid = false;
-      }
+          // Show success message
+          successMessage.classList.add("show");
 
-      // Retype Password
-      if(repassword.value.trim() === ''){
-        document.getElementById('repasswordError').innerText = 'Please retype your password.';
-        valid = false;
-      } else if(repassword.value !== password.value){
-        document.getElementById('repasswordError').innerText = 'Passwords do not match.';
-        valid = false;
-      }
+          // Change button to success state
+          registerBtn.innerHTML = "✔ Registered";
 
-      if(valid){
-        window.location.href = "login.html";
+          // Fade out success message before redirect
+          setTimeout(() => {
+            successMessage.classList.add("fade-out");
+            setTimeout(() => {
+              window.location.href = "login.html";
+            }, 1000);
+          }, 2000);
+
+        }, 2000);
       }
     });
   </script>
