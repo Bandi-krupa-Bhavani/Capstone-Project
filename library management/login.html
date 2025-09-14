@@ -5,13 +5,76 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login | BookVerse</title>
   <link rel="stylesheet" href="css/login.css">
+
+  <!-- ✅ Font Awesome for eyelash toggle -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <style>
+    .input-group {
+      position: relative;
+      margin-bottom: 15px;
+    }
+
+    .input-group input {
+      width: 100%;
+      padding: 10px;
+      padding-right: 35px; /* space for eye icon */
+      box-sizing: border-box;
+    }
+
+    /* Eyelash icon inside password field */
+    .password-toggle {
+      position: absolute;
+      top: 50%;
+      right: 10px;
+      transform: translateY(-50%);
+      cursor: pointer;
+      font-size: 18px;
+      color: #555;
+    }
+
+    .password-toggle:hover {
+      color: #000;
+    }
+
+    .remember-me {
+      display: flex;
+      align-items: center;
+      margin-top: 10px;
+    }
+    .remember-me input {
+      margin-right: 5px;
+    }
+
+    .error-input {
+      border: 1px solid red;
+    }
+
+    /* Success message styling */
+    .success-message {
+      display: none;
+      color: green;
+      margin-top: 15px;
+      font-weight: bold;
+      text-align: center;
+    }
+    .success-message.show {
+      display: block;
+      animation: fadeIn 0.8s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
 </head>
 <body>
   <div class="login-container">
     
-    <!-- Left side with moving image -->
+    <!-- Left side with image -->
     <div class="login-image">
-      <img src="css\assets\images\login image.jpeg" alt="Books Animation">
+      <img src="css/assets/images/login image.jpeg" alt="Books Animation">
     </div>
 
     <!-- Right side with login form -->
@@ -19,18 +82,28 @@
       <h2>Welcome Back</h2>
       <p>Login to continue your journey with BookVerse</p>
 
-      <form>
+      <form id="loginForm">
         <div class="input-group">
-          <label>Email</label>
-          <input type="email" placeholder="Enter your email" required>
+          <label for="loginEmail">Email</label>
+          <input type="email" id="loginEmail" placeholder="Enter your email" required>
+          <small class="error" id="loginEmailError"></small>
         </div>
 
         <div class="input-group">
-          <label>Password</label>
-          <input type="password" placeholder="Enter your password" required>
+          <label for="loginPassword">Password</label>
+          <input type="password" id="loginPassword" placeholder="Enter your password" required>
+          <!-- 👁 Eyelash Toggle -->
+          <i class="fa-solid fa-eye password-toggle" id="togglePassword"></i>
+          <small class="error" id="loginPasswordError"></small>
         </div>
 
-        <button type="submit" class="btn">Login</button>
+        <div class="remember-me">
+          <input type="checkbox" id="rememberMe">
+          <label for="rememberMe">Remember Me</label>
+        </div>
+
+        <button type="submit" class="btn" id="loginBtn">Login</button>
+        <p class="success-message" id="loginSuccess">✅ Logged in successfully!</p>
 
         <div class="or-divider">or</div>
 
@@ -44,7 +117,88 @@
         </p>
       </form>
     </div>
-
   </div>
+
+  <script>
+    const loginForm = document.getElementById("loginForm");
+    const loginEmail = document.getElementById("loginEmail");
+    const loginPassword = document.getElementById("loginPassword");
+    const loginBtn = document.getElementById("loginBtn");
+    const loginSuccess = document.getElementById("loginSuccess");
+    const togglePassword = document.getElementById("togglePassword");
+
+    // Toggle password visibility (eyelash icons)
+    togglePassword.addEventListener("click", () => {
+      const type = loginPassword.getAttribute("type") === "password" ? "text" : "password";
+      loginPassword.setAttribute("type", type);
+
+      // Toggle eyelash icon
+      togglePassword.classList.toggle("fa-eye");
+      togglePassword.classList.toggle("fa-eye-slash");
+    });
+
+    // Validation function
+    function validateField(input, regex, errorId, message) {
+      const errorElement = document.getElementById(errorId);
+      if (!regex.test(input.value.trim())) {
+        errorElement.textContent = message;
+        input.classList.add("error-input");
+        return false;
+      } else {
+        errorElement.textContent = "";
+        input.classList.remove("error-input");
+        return true;
+      }
+    }
+
+    // Live validation
+    loginEmail.addEventListener("input", () => 
+      validateField(loginEmail, /^[^ ]+@[^ ]+\.[a-z]{2,3}$/, "loginEmailError", "Enter a valid email address.")
+    );
+
+    loginPassword.addEventListener("input", () => 
+      validateField(loginPassword, /^.{6,}$/, "loginPasswordError", "Password must be at least 6 characters.")
+    );
+
+    // On form submit
+    loginForm.addEventListener("submit", function(e) {
+      e.preventDefault();
+
+      const isEmailValid = validateField(loginEmail, /^[^ ]+@[^ ]+\.[a-z]{2,3}$/, "loginEmailError", "Enter a valid email address.");
+      const isPasswordValid = validateField(loginPassword, /^.{6,}$/, "loginPasswordError", "Password must be at least 6 characters.");
+
+      if (isEmailValid && isPasswordValid) {
+        loginBtn.disabled = true;
+        loginBtn.innerHTML = '<span class="spinner"></span> Logging in...';
+
+        // Simulate server delay
+        setTimeout(() => {
+          document.querySelectorAll("input").forEach(el => el.disabled = true);
+
+          loginBtn.innerHTML = "✔ Logged In";
+          loginSuccess.classList.add("show"); // ✅ stays until redirect
+
+          // Store remember me
+          if (document.getElementById("rememberMe").checked) {
+            localStorage.setItem("savedEmail", loginEmail.value);
+          }
+
+          // Redirect after delay (message stays visible)
+          setTimeout(() => {
+            window.location.href = "dashboard.html"; 
+          }, 2500); // 2.5s
+        }, 1500); // fake login delay
+      }
+    });
+
+    // Auto-fill saved email if remembered
+    window.addEventListener("load", () => {
+      const savedEmail = localStorage.getItem("savedEmail");
+      if (savedEmail) {
+        loginEmail.value = savedEmail;
+        document.getElementById("rememberMe").checked = true;
+      }
+    });
+  </script>
 </body>
 </html>
