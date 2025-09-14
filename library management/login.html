@@ -5,76 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login | BookVerse</title>
   <link rel="stylesheet" href="css/login.css">
-
-  <!-- ✅ Font Awesome for eyelash toggle -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
-  <style>
-    .input-group {
-      position: relative;
-      margin-bottom: 15px;
-    }
-
-    .input-group input {
-      width: 100%;
-      padding: 10px;
-      padding-right: 35px; /* space for eye icon */
-      box-sizing: border-box;
-    }
-
-    /* Eyelash icon inside password field */
-    .password-toggle {
-      position: absolute;
-      top: 50%;
-      right: 10px;
-      transform: translateY(-50%);
-      cursor: pointer;
-      font-size: 18px;
-      color: #555;
-    }
-
-    .password-toggle:hover {
-      color: #000;
-    }
-
-    .remember-me {
-      display: flex;
-      align-items: center;
-      margin-top: 10px;
-    }
-    .remember-me input {
-      margin-right: 5px;
-    }
-
-    .error-input {
-      border: 1px solid red;
-    }
-
-    /* Success message styling */
-    .success-message {
-      display: none;
-      color: green;
-      margin-top: 15px;
-      font-weight: bold;
-      text-align: center;
-    }
-    .success-message.show {
-      display: block;
-      animation: fadeIn 0.8s ease-in-out;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(-5px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-  </style>
 </head>
 <body>
   <div class="login-container">
-    
+
     <!-- Left side with image -->
     <div class="login-image">
       <img src="css/assets/images/login image.jpeg" alt="Books Animation">
+      <div class="login-quote">
+        <p>“A library is not a luxury but one of the necessities of life.”</p>
+      </div>
     </div>
 
     <!-- Right side with login form -->
@@ -92,7 +33,6 @@
         <div class="input-group">
           <label for="loginPassword">Password</label>
           <input type="password" id="loginPassword" placeholder="Enter your password" required>
-          <!-- 👁 Eyelash Toggle -->
           <i class="fa-solid fa-eye password-toggle" id="togglePassword"></i>
           <small class="error" id="loginPasswordError"></small>
         </div>
@@ -102,12 +42,15 @@
           <label for="rememberMe">Remember Me</label>
         </div>
 
+        <!-- Error message placeholder -->
+        <p id="loginError" class="error-message"></p>
+
         <button type="submit" class="btn" id="loginBtn">Login</button>
         <p class="success-message" id="loginSuccess">✅ Logged in successfully!</p>
 
         <div class="or-divider">or</div>
 
-        <!-- Google button -->
+        <!-- Google login button -->
         <button type="button" class="google-btn">
           <img src="css/assets/icons/google.jpeg" alt="Google Icon"> Continue with Google
         </button>
@@ -119,86 +62,87 @@
     </div>
   </div>
 
-  <script>
-    const loginForm = document.getElementById("loginForm");
-    const loginEmail = document.getElementById("loginEmail");
-    const loginPassword = document.getElementById("loginPassword");
-    const loginBtn = document.getElementById("loginBtn");
-    const loginSuccess = document.getElementById("loginSuccess");
-    const togglePassword = document.getElementById("togglePassword");
+  <script type="module">
+  import { auth, provider, db } from "./firebase-config.js";
+  import { signInWithEmailAndPassword, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    // Toggle password visibility (eyelash icons)
-    togglePassword.addEventListener("click", () => {
-      const type = loginPassword.getAttribute("type") === "password" ? "text" : "password";
-      loginPassword.setAttribute("type", type);
+  const loginForm = document.getElementById("loginForm");
+  const loginEmail = document.getElementById("loginEmail");
+  const loginPassword = document.getElementById("loginPassword");
+  const loginBtn = document.getElementById("loginBtn");
+  const loginSuccess = document.getElementById("loginSuccess");
+  const loginError = document.getElementById("loginError");
+  const togglePassword = document.getElementById("togglePassword");
 
-      // Toggle eyelash icon
-      togglePassword.classList.toggle("fa-eye");
-      togglePassword.classList.toggle("fa-eye-slash");
-    });
+  // ✅ Email/Password Login
+  loginForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    loginBtn.disabled = true;
+    loginBtn.textContent = "Logging in...";
+    loginError.style.display = "none";
 
-    // Validation function
-    function validateField(input, regex, errorId, message) {
-      const errorElement = document.getElementById(errorId);
-      if (!regex.test(input.value.trim())) {
-        errorElement.textContent = message;
-        input.classList.add("error-input");
-        return false;
-      } else {
-        errorElement.textContent = "";
-        input.classList.remove("error-input");
-        return true;
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, loginEmail.value, loginPassword.value);
+      loginSuccess.classList.add("show");
+      loginBtn.textContent = "✔ Logged In";
+
+      // Remember Me option
+      if (document.getElementById("rememberMe").checked) {
+        localStorage.setItem("savedEmail", loginEmail.value);
       }
+
+      setTimeout(() => {
+        window.location.href = "dashboard.html";
+      }, 1000);
+    } catch (error) {
+      console.error(error.message);
+      loginError.textContent = "Invalid login credentials.";
+      loginError.style.display = "block";
+      loginBtn.disabled = false;
+      loginBtn.textContent = "Login";
     }
+  });
 
-    // Live validation
-    loginEmail.addEventListener("input", () => 
-      validateField(loginEmail, /^[^ ]+@[^ ]+\.[a-z]{2,3}$/, "loginEmailError", "Enter a valid email address.")
-    );
+  // ✅ Google Login
+  document.querySelector(".google-btn").addEventListener("click", async () => {
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
 
-    loginPassword.addEventListener("input", () => 
-      validateField(loginPassword, /^.{6,}$/, "loginPasswordError", "Password must be at least 6 characters.")
-    );
+      // Optional: Save user info in Firestore
+      await setDoc(doc(db, "users", user.uid), {
+        fullname: user.displayName,
+        email: user.email,
+        phone: user.phoneNumber || "",
+        createdAt: new Date(),
+        provider: "google"
+      }, { merge: true });
 
-    // On form submit
-    loginForm.addEventListener("submit", function(e) {
-      e.preventDefault();
+      window.location.href = "dashboard.html";
+    } catch (error) {
+      console.error("Google login error:", error);
+      loginError.textContent = "Google login failed. Try again.";
+      loginError.style.display = "block";
+    }
+  });
 
-      const isEmailValid = validateField(loginEmail, /^[^ ]+@[^ ]+\.[a-z]{2,3}$/, "loginEmailError", "Enter a valid email address.");
-      const isPasswordValid = validateField(loginPassword, /^.{6,}$/, "loginPasswordError", "Password must be at least 6 characters.");
+  // ✅ Password toggle
+  togglePassword.addEventListener("click", () => {
+    const type = loginPassword.getAttribute("type") === "password" ? "text" : "password";
+    loginPassword.setAttribute("type", type);
+    togglePassword.classList.toggle("fa-eye");
+    togglePassword.classList.toggle("fa-eye-slash");
+  });
 
-      if (isEmailValid && isPasswordValid) {
-        loginBtn.disabled = true;
-        loginBtn.innerHTML = '<span class="spinner"></span> Logging in...';
-
-        // Simulate server delay
-        setTimeout(() => {
-          document.querySelectorAll("input").forEach(el => el.disabled = true);
-
-          loginBtn.innerHTML = "✔ Logged In";
-          loginSuccess.classList.add("show"); // ✅ stays until redirect
-
-          // Store remember me
-          if (document.getElementById("rememberMe").checked) {
-            localStorage.setItem("savedEmail", loginEmail.value);
-          }
-
-          // Redirect after delay (message stays visible)
-          setTimeout(() => {
-            window.location.href = "dashboard.html"; 
-          }, 2500); // 2.5s
-        }, 1500); // fake login delay
-      }
-    });
-
-    // Auto-fill saved email if remembered
-    window.addEventListener("load", () => {
-      const savedEmail = localStorage.getItem("savedEmail");
-      if (savedEmail) {
-        loginEmail.value = savedEmail;
-        document.getElementById("rememberMe").checked = true;
-      }
-    });
+  // ✅ Auto-fill Remembered Email
+  window.addEventListener("load", () => {
+    const savedEmail = localStorage.getItem("savedEmail");
+    if (savedEmail) {
+      loginEmail.value = savedEmail;
+      document.getElementById("rememberMe").checked = true;
+    }
+  });
   </script>
 </body>
 </html>

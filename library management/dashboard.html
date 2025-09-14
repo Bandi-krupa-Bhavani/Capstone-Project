@@ -1,0 +1,157 @@
+<!--
+BOOKVERSE - HTML, CSS, JS version (No React)
+Includes "My Library" option in the top bar
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BOOKVERSE Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { margin:0; font-family: 'Inter', sans-serif; background: linear-gradient(to bottom,#f9fafb,#f3f4f6); color:#1f2937; }
+    header { background: linear-gradient(to right,#4f46e5,#7c3aed); color:white; padding:1rem 2rem; display:flex; align-items:center; justify-content:space-between; }
+    header .logo { display:flex; align-items:center; gap:.5rem; font-weight:700; }
+    header .actions { display:flex; align-items:center; gap:1rem; }
+    header input { border:none; border-radius:9999px; padding:.5rem 1rem; width:300px; }
+    header button { background:white; color:#4f46e5; border:none; padding:.5rem 1rem; border-radius:9999px; font-weight:600; cursor:pointer; }
+    .container { max-width:1200px; margin:2rem auto; padding:0 1rem; display:flex; gap:2rem; }
+    .main { flex:1; }
+    h2 { font-size:1.5rem; font-weight:700; margin-bottom:1rem; }
+    .genres,.domains,.books { margin-bottom:2rem; }
+    .grid { display:grid; gap:1rem; }
+    .genres .grid { grid-template-columns: repeat(auto-fill,minmax(160px,1fr)); }
+    .domains .domain { background:white; border-radius:1rem; padding:1rem; box-shadow:0 2px 6px rgba(0,0,0,.05); margin-bottom:1rem; }
+    .domain h4 { margin:0; font-weight:600; cursor:pointer; display:flex; justify-content:space-between; }
+    .domain .subs { display:none; margin-top:.5rem; }
+    .domain.open .subs { display:block; }
+    .genres .card { background:white; padding:1rem; border-radius:1rem; box-shadow:0 2px 6px rgba(0,0,0,.05); cursor:pointer; }
+    .books .card { background:white; padding:1rem; border-radius:1rem; box-shadow:0 2px 6px rgba(0,0,0,.05); }
+    .books .card h5 { margin:.5rem 0; font-weight:600; }
+    aside { width:280px; }
+    aside .panel { background:white; border-radius:1rem; padding:1rem; margin-bottom:1rem; box-shadow:0 2px 6px rgba(0,0,0,.05); }
+    .chatbot-btn { position:fixed; right:1.5rem; bottom:1.5rem; background:linear-gradient(to right,#4f46e5,#7c3aed); color:white; border:none; border-radius:50%; width:60px; height:60px; display:flex; align-items:center; justify-content:center; font-size:1.5rem; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,.2); }
+    .chat-window { position:fixed; right:1.5rem; bottom:90px; width:320px; background:white; border-radius:1rem; box-shadow:0 4px 12px rgba(0,0,0,.2); display:none; flex-direction:column; overflow:hidden; }
+    .chat-window header { background:linear-gradient(to right,#4f46e5,#7c3aed); padding:.5rem 1rem; color:white; font-weight:600; }
+    .chat-messages { padding:1rem; flex:1; overflow-y:auto; }
+    .chat-input { display:flex; border-top:1px solid #e5e7eb; }
+    .chat-input input { flex:1; border:none; padding:.5rem; }
+    .chat-input button { background:#4f46e5; color:white; border:none; padding:.5rem 1rem; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">📚 BOOKVERSE</div>
+  <input type="text" placeholder="Search books, authors, topics..." />
+  <div class="actions">
+    <button onclick="alert('Opening My Library...')">My Library</button>
+    <div>👤</div>
+  </div>
+</header>
+
+<div class="container">
+  <div class="main">
+    <h2>Explore Knowledge</h2>
+
+    <section class="genres">
+      <h3>Genres</h3>
+      <div class="grid">
+        <div class="card">Sci‑Fi</div>
+        <div class="card">Motivation</div>
+        <div class="card">Research Papers</div>
+        <div class="card">News</div>
+      </div>
+    </section>
+
+    <section class="domains">
+      <h3>Academic Domains</h3>
+      <div class="domain">
+        <h4>Computer Science <span>▼</span></h4>
+        <div class="subs">
+          <button>Fundamentals</button>
+          <button>AI/ML</button>
+          <button>Data Science</button>
+        </div>
+      </div>
+      <div class="domain">
+        <h4>Mechanical <span>▼</span></h4>
+        <div class="subs">
+          <button>Thermo</button>
+          <button>Dynamics</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="books">
+      <h3>Recommended</h3>
+      <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr));">
+        <div class="card">
+          <h5>Learning React</h5>
+          <p>A. Researcher</p>
+        </div>
+        <div class="card">
+          <h5>AI Foundations</h5>
+          <p>X. Scholar</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <aside>
+    <div class="panel">
+      <strong>Progress</strong>
+      <p>Currently reading: 3 books</p>
+      <div style="background:#e5e7eb;height:6px;border-radius:9999px;overflow:hidden;">
+        <div style="width:45%;background:linear-gradient(to right,#4f46e5,#7c3aed);height:6px;"></div>
+      </div>
+    </div>
+    <div class="panel">
+      <strong>Quick Actions</strong>
+      <div>
+        <button>Saved</button>
+        <button>Downloads</button>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<button class="chatbot-btn" onclick="toggleChat()">💬</button>
+<div class="chat-window" id="chatWindow">
+  <header>BOOKVERSE Assistant</header>
+  <div class="chat-messages" id="chatMessages">
+    <div>Hi! Ask me for book recommendations.</div>
+  </div>
+  <div class="chat-input">
+    <input type="text" id="chatInput" placeholder="Ask anything...">
+    <button onclick="sendMsg()">Send</button>
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll('.domain h4').forEach(h => {
+    h.addEventListener('click', () => {
+      h.parentElement.classList.toggle('open');
+    });
+  });
+
+  function toggleChat(){
+    const win = document.getElementById('chatWindow');
+    win.style.display = win.style.display==='flex' ? 'none':'flex';
+    if(win.style.display==='flex'){win.style.flexDirection='column';}
+  }
+
+  function sendMsg(){
+    const input=document.getElementById('chatInput');
+    if(!input.value.trim()) return;
+    const msg=document.createElement('div');
+    msg.textContent=input.value;
+    document.getElementById('chatMessages').appendChild(msg);
+    input.value='';
+  }
+</script>
+
+</body>
+</html>

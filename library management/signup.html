@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sign Up | BookVerse</title>
   <link rel="stylesheet" href="css/signup.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
 </head>
 <body class="login-page">
   <div class="login-container">
@@ -42,17 +44,22 @@
           <small class="error" id="phoneError"></small>
         </div>
 
-        <div class="input-group">
-          <label for="password">Password</label>
-          <input type="password" id="password" placeholder="Enter your password" required>
-          <small class="error" id="passwordError"></small>
-        </div>
+      <div class="input-group">
+      <label for="password">Password</label>
+      <input type="password" id="password" placeholder="Enter your password" required>
+      <i class="fa-solid fa-eye password-toggle" id="togglePassword"></i>
+      <small class="error" id="passwordError"></small>
+    </div>
 
-        <div class="input-group">
-          <label for="repassword">Retype Password</label>
-          <input type="password" id="repassword" placeholder="Retype your password" required>
-          <small class="error" id="repasswordError"></small>
-        </div>
+    <div class="input-group">
+      <label for="repassword">Retype Password</label>
+      <input type="password" id="repassword" placeholder="Retype your password" required>
+      <i class="fa-solid fa-eye password-toggle" id="toggleRePassword"></i>
+      <small class="error" id="repasswordError"></small>
+    </div>
+
+        <!-- Error message placeholder -->
+<p id="error-message" style="color: red; font-size: 14px; margin-top: 8px;"></p>
 
         <button type="submit" class="btn" id="registerBtn">Register</button>
         <p class="success-message" id="successMessage">✅ Registration successful!</p>
@@ -66,89 +73,136 @@
   </div>
 
   <!-- JavaScript for real-time validation -->
-  <script>
-    const form = document.getElementById("signupForm");
-    const successMessage = document.getElementById("successMessage");
-    const registerBtn = document.getElementById("registerBtn");
+   <script type="module">
+import { auth, db } from "./firebase-config.js";
+import { createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    function validateField(input, regex, errorId, message) {
-      const errorElement = document.getElementById(errorId);
-      if (!regex.test(input.value.trim())) {
-        errorElement.textContent = message;
-        input.classList.add("error-input");
-        return false;
+// Form elements
+const form = document.getElementById("signupForm");
+const successMessage = document.getElementById("successMessage");
+const registerBtn = document.getElementById("registerBtn");
+const errorMessageEl = document.getElementById("error-message");
+
+const fullname = document.getElementById("fullname");
+const email = document.getElementById("email");
+const phone = document.getElementById("phone");
+const password = document.getElementById("password");
+const repassword = document.getElementById("repassword");
+
+const fullnameError = document.getElementById("fullnameError");
+const emailError = document.getElementById("emailError");
+const phoneError = document.getElementById("phoneError");
+const passwordError = document.getElementById("passwordError");
+const repasswordError = document.getElementById("repasswordError");
+
+// --- Validation function ---
+function validateField(input, regex, errorElement, message) {
+  if (!regex.test(input.value.trim())) {
+    errorElement.textContent = message;
+    input.classList.add("error-input");
+    return false;
+  } else {
+    errorElement.textContent = "";
+    input.classList.remove("error-input");
+    return true;
+  }
+}
+
+// --- Real-time validation ---
+fullname.addEventListener("input", () =>
+  validateField(fullname, /^[A-Za-z ]+$/, fullnameError, "Only letters are allowed.")
+);
+
+email.addEventListener("input", () =>
+  validateField(email, /^[^ ]+@[^ ]+\.[a-z]{2,3}$/, emailError, "Enter a valid email address.")
+);
+
+phone.addEventListener("input", () =>
+  validateField(phone, /^[0-9]{10}$/, phoneError, "Phone number must be 10 digits.")
+);
+
+password.addEventListener("input", () =>
+  validateField(password, /^.{6,}$/, passwordError, "Password must be at least 6 characters.")
+);
+
+repassword.addEventListener("input", () => {
+  if (repassword.value !== password.value) {
+    repasswordError.textContent = "Passwords do not match.";
+    repassword.classList.add("error-input");
+  } else {
+    repasswordError.textContent = "";
+    repassword.classList.remove("error-input");
+  }
+});
+
+// --- Toggle password visibility ---
+document.getElementById("togglePassword").addEventListener("click", () => {
+  const type = password.type === "password" ? "text" : "password";
+  password.type = type;
+  document.getElementById("togglePassword").classList.toggle("fa-eye");
+  document.getElementById("togglePassword").classList.toggle("fa-eye-slash");
+});
+
+document.getElementById("toggleRePassword").addEventListener("click", () => {
+  const type = repassword.type === "password" ? "text" : "password";
+  repassword.type = type;
+  document.getElementById("toggleRePassword").classList.toggle("fa-eye");
+  document.getElementById("toggleRePassword").classList.toggle("fa-eye-slash");
+});
+
+// --- Form submit ---
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  errorMessageEl.textContent = "";
+
+  const isFullnameValid = validateField(fullname, /^[A-Za-z ]+$/, fullnameError, "Only letters are allowed.");
+  const isEmailValid = validateField(email, /^[^ ]+@[^ ]+\.[a-z]{2,3}$/, emailError, "Enter a valid email address.");
+  const isPhoneValid = validateField(phone, /^[0-9]{10}$/, phoneError, "Phone number must be 10 digits.");
+  const isPasswordValid = validateField(password, /^.{6,}$/, passwordError, "Password must be at least 6 characters.");
+  const isRepasswordValid = repassword.value === password.value;
+
+  if (!isRepasswordValid) {
+    repasswordError.textContent = "Passwords do not match.";
+    repassword.classList.add("error-input");
+  }
+
+  if (isFullnameValid && isEmailValid && isPhoneValid && isPasswordValid && isRepasswordValid) {
+    try {
+      registerBtn.disabled = true;
+      registerBtn.textContent = "Registering...";
+
+      // Create user
+      const userCredential = await createUserWithEmailAndPassword(auth, email.value.trim(), password.value.trim());
+
+      // Save extra info in Firestore
+      await setDoc(doc(db, "users", userCredential.user.uid), {
+        fullname: fullname.value.trim(),
+        email: email.value.trim(),
+        phone: phone.value.trim(),
+        createdAt: new Date()
+      });
+
+      successMessage.classList.add("show");
+      registerBtn.textContent = "✔ Registered";
+
+      setTimeout(() => {
+        window.location.href = "login.html";
+      }, 2000);
+
+    } catch (error) {
+      if (error.code === "auth/email-already-in-use") {
+        errorMessageEl.textContent = "This email is already in use.";
+      } else if (error.code === "auth/weak-password") {
+        errorMessageEl.textContent = "Password should be at least 6 characters.";
       } else {
-        errorElement.textContent = "";
-        input.classList.remove("error-input");
-        return true;
+        errorMessageEl.textContent = "Error: " + error.message;
       }
+      registerBtn.disabled = false;
+      registerBtn.textContent = "Register";
     }
-
-    // Live validation events
-    fullname.addEventListener("input", () => 
-      validateField(fullname, /^[A-Za-z ]+$/, "fullnameError", "Only letters are allowed.")
-    );
-    email.addEventListener("input", () => 
-      validateField(email, /^[^ ]+@[^ ]+\.[a-z]{2,3}$/, "emailError", "Enter a valid email address.")
-    );
-    phone.addEventListener("input", () => 
-      validateField(phone, /^[0-9]{10}$/, "phoneError", "Phone number must be 10 digits.")
-    );
-    password.addEventListener("input", () => 
-      validateField(password, /^.{6,}$/, "passwordError", "Password must be at least 6 characters.")
-    );
-    repassword.addEventListener("input", () => {
-      if (repassword.value !== password.value) {
-        repassword.classList.add("error-input");
-        repasswordError.textContent = "Passwords do not match.";
-      } else {
-        repassword.classList.remove("error-input");
-        repasswordError.textContent = "";
-      }
-    });
-
-    // On form submit
-    form.addEventListener("submit", function(e) {
-      e.preventDefault();
-
-      const isFullnameValid = validateField(fullname, /^[A-Za-z ]+$/, "fullnameError", "Only letters are allowed.");
-      const isEmailValid = validateField(email, /^[^ ]+@[^ ]+\.[a-z]{2,3}$/, "emailError", "Enter a valid email address.");
-      const isPhoneValid = validateField(phone, /^[0-9]{10}$/, "phoneError", "Phone number must be 10 digits.");
-      const isPasswordValid = validateField(password, /^.{6,}$/, "passwordError", "Password must be at least 6 characters.");
-      const isRepasswordValid = (repassword.value === password.value);
-
-      if (!isRepasswordValid) {
-        repassword.classList.add("error-input");
-        repasswordError.textContent = "Passwords do not match.";
-      }
-
-      if (isFullnameValid && isEmailValid && isPhoneValid && isPasswordValid && isRepasswordValid) {
-        // Show spinner inside button
-        registerBtn.disabled = true;
-        registerBtn.innerHTML = '<span class="spinner"></span> Registering...';
-
-        // Simulate server delay
-        setTimeout(() => {
-          // Disable all inputs
-          document.querySelectorAll("input").forEach(el => el.disabled = true);
-
-          // Show success message
-          successMessage.classList.add("show");
-
-          // Change button to success state
-          registerBtn.innerHTML = "✔ Registered";
-
-          // Fade out success message before redirect
-          setTimeout(() => {
-            successMessage.classList.add("fade-out");
-            setTimeout(() => {
-              window.location.href = "login.html";
-            }, 1000);
-          }, 2000);
-
-        }, 2000);
-      }
-    });
-  </script>
+  }
+});
+</script>
 </body>
 </html>
