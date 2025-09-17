@@ -101,7 +101,7 @@ body {
   justify-content: center; /* center horizontally */
   align-items: center;     /* center vertically */
   overflow-y: hidden;      /* remove vertical scroll only */
-  background: #edcaa9;
+  background: rgba(237, 202, 169, 0.8);
   transition: all 0.3s ease-in-out; /* smooth transitions */
 }
 
