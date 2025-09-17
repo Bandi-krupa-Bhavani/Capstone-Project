@@ -81,17 +81,27 @@ if(storedName && storedLetter){
 onAuthStateChanged(auth, async (user) => {
   if(!user){
     sessionStorage.clear();
-    window.location.href="login.html";
+    window.location.href = "login.html";
     return;
   }
 
   try {
-    // Fetch Firestore data only if not stored
-    let fullname = sessionStorage.getItem("fullname");
-    if(!fullname){
-      const userDocRef = doc(db,"users",user.uid);
+    const currentUID = user.uid;
+    const storedUID = sessionStorage.getItem("uid");
+
+    let fullname;
+
+    // If stored UID matches current user, use cached name
+    if(storedUID === currentUID){
+      fullname = sessionStorage.getItem("fullname") || "User";
+    } else {
+      // Fetch from Firestore for new user
+      const userDocRef = doc(db,"users",currentUID);
       const userDocSnap = await getDoc(userDocRef);
       fullname = userDocSnap.exists() && userDocSnap.data().fullname ? userDocSnap.data().fullname : "User";
+
+      // Save to sessionStorage
+      sessionStorage.setItem("uid", currentUID);
       sessionStorage.setItem("fullname", fullname);
       sessionStorage.setItem("firstLetter", fullname.charAt(0).toUpperCase());
     }
@@ -103,6 +113,7 @@ onAuthStateChanged(auth, async (user) => {
     profileName.textContent = "Error loading name";
   }
 });
+
 
 // Upload photo
 document.getElementById("updatePhotoBtn").addEventListener("click", async () => {
