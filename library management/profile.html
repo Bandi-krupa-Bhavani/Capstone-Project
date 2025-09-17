@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+<title>Profile Page</title>
+<style>
+  body { margin:0; font-family: Arial,sans-serif; background:#f4f6f9; transition: margin-left 0.3s ease;}
+  .sidebar { position: fixed; top:0; left:-250px; width:250px; height:100%; background:linear-gradient(135deg,#7f00ff,#e100ff); padding-top:60px; transition:left 0.3s ease; color:#fff;}
+  .sidebar.active { left:0;}
+  .sidebar a { display:block; padding:15px 20px; color:white; text-decoration:none; transition:background 0.3s;}
+  .sidebar a:hover { background:rgba(255,255,255,0.2);}
+  .toggle-btn { position: fixed; top:15px; left:15px; font-size:25px; background:#7f00ff; color:white; border:none; padding:8px 12px; border-radius:6px; cursor:pointer; z-index:1000;}
+  .content { padding:40px 20px; transition:margin-left 0.3s ease; text-align:center;}
+  .content.shift { margin-left:250px;}
+  .profile-name { font-size:22px; margin:8px 0 4px; color:rgba(185,48,45,0.875);}
+  .actions { display:flex; flex-direction:column; gap:12px; max-width:350px; margin:auto;}
+  .action-btn { background:#fff; border:none; padding:14px; border-radius:10px; cursor:pointer; display:flex; align-items:center; justify-content:flex-start; gap:10px; font-size:15px; color:#444; box-shadow:0 2px 6px rgba(0,0,0,0.08); transition: transform 0.2s, background 0.2s;}
+  .action-btn:hover { background:#ece6ff; transform:translateY(-2px);}
+  .action-btn span { font-size:18px;}
+  .profile-photo-wrapper { position:relative; display:inline-block;}
+  .avatar,.profile-pic { width:120px; height:120px; border-radius:50%; object-fit:cover; border:4px solid rgba(197,84,84,0.822); display:flex; align-items:center; justify-content:center; font-size:40px; font-weight:bold; color:rgba(197,84,84,0.822); background:white;}
+  .camera-toggle { position:absolute; bottom:0; right:0; background:rgb(150,149,149); color:white; border-radius:50%; padding:8px; cursor:pointer; font-size:18px; box-shadow:0 2px 6px rgba(0,0,0,0.2);}
+  .photo-options { position:absolute; top:130px; left:50%; transform:translateX(-50%); background:white; border:1px solid #ccc; border-radius:8px; display:none; flex-direction:column; min-width:140px; box-shadow:0 4px 10px rgba(0,0,0,0.1); z-index:10;}
+  .photo-options button { padding:10px; border:none; background:none; cursor:pointer; text-align:left; font-size:14px;}
+  .photo-options button:hover { background:#f0f0f0;}
+</style>
+</head>
+<body>
+
+<div class="sidebar" id="sidebar">
+  <a href="dashboard.html">Dashboard</a>
+  <a href="library.html">My Library</a>
+  <a href="profile.html">Profile</a>
+  <a href="home.html">Logout</a>
+</div>
+
+<button class="toggle-btn" id="toggleBtn">☰</button>
+
+<div class="content" id="mainContent">
+  <div class="profile-photo-wrapper" id="profileWrapper">
+    <div id="profilePhotoContainer"><div class="avatar">U</div></div>
+    <div class="camera-toggle" id="cameraToggle"><i class="fa-solid fa-camera"></i></div>
+    <div class="photo-options" id="photoOptions">
+      <button id="updatePhotoBtn">Update Photo</button>
+      <button id="deletePhotoBtn">Delete Photo</button>
+    </div>
+  </div>
+
+  <h2 class="profile-name" id="profileName">Loading...</h2>
+
+  <div class="actions">
+    <button class="action-btn"><span>✏️</span> Edit Profile</button>
+    <button class="action-btn"><span>🔒</span> Password & Security</button>
+    <button class="action-btn"><span>🔔</span> Notifications</button>
+    <button class="action-btn"><span>❓</span> Help & Support</button>
+    <button class="action-btn"><span>🛡️</span> Privacy Settings</button>
+    <button class="action-btn" id="logoutBtn"><span>🚪</span> Logout</button>
+  </div>
+</div>
+
+<script type="module">
+import { auth, db } from "./firebase-config.js";
+import { onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+
+const profileName = document.getElementById("profileName");
+const profilePhotoContainer = document.getElementById("profilePhotoContainer");
+const photoOptions = document.getElementById("photoOptions");
+const cameraToggle = document.getElementById("cameraToggle");
+const profileWrapper = document.getElementById("profileWrapper");
+
+const storage = getStorage();
+
+// Append camera toggle & options
+profileWrapper.appendChild(cameraToggle);
+profileWrapper.appendChild(photoOptions);
+
+// Toggle photo options
+cameraToggle.addEventListener("click", () => {
+  photoOptions.style.display = (photoOptions.style.display === "flex") ? "none" : "flex";
+});
+
+// Helper: display name & avatar
+function displayNameAvatar(fullname, photoURL=null) {
+  profileName.textContent = fullname;
+  if(photoURL){
+    profilePhotoContainer.innerHTML = `<img src="${photoURL}" class="profile-pic" alt="Profile Photo">`;
+  } else {
+    profilePhotoContainer.innerHTML = `<div class="avatar">${fullname.charAt(0).toUpperCase()}</div>`;
+  }
+}
+
+// Check sessionStorage first
+const storedName = sessionStorage.getItem("fullname");
+const storedLetter = sessionStorage.getItem("firstLetter");
+if(storedName && storedLetter){
+  displayNameAvatar(storedName);
+}
+
+// Auth listener
+onAuthStateChanged(auth, async (user) => {
+  if(!user){
+    sessionStorage.clear();
+    window.location.href="login.html";
+    return;
+  }
+
+  try {
+    // Fetch Firestore data only if not stored
+    let fullname = sessionStorage.getItem("fullname");
+    if(!fullname){
+      const userDocRef = doc(db,"users",user.uid);
+      const userDocSnap = await getDoc(userDocRef);
+      fullname = userDocSnap.exists() && userDocSnap.data().fullname ? userDocSnap.data().fullname : "User";
+      sessionStorage.setItem("fullname", fullname);
+      sessionStorage.setItem("firstLetter", fullname.charAt(0).toUpperCase());
+    }
+
+    displayNameAvatar(fullname, user.photoURL);
+
+  } catch(err){
+    console.error("Error fetching user data:", err);
+    profileName.textContent = "Error loading name";
+  }
+});
+
+// Upload photo
+document.getElementById("updatePhotoBtn").addEventListener("click", async ()=>{
+  const input = document.createElement("input");
+  input.type="file";
+  input.accept="image/*";
+  input.onchange=async (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const storageRef = ref(storage, `profilePhotos/${auth.currentUser.uid}`);
+    try{
+      await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(storageRef);
+      await updateProfile(auth.currentUser,{photoURL:downloadURL});
+      displayNameAvatar(sessionStorage.getItem("fullname"), downloadURL);
+      alert("Profile photo updated ✅");
+    }catch(err){console.error(err); alert("Failed to upload photo ❌");}
+  };
+  input.click();
+});
+
+// Delete photo
+document.getElementById("deletePhotoBtn").addEventListener("click", async ()=>{
+  if(!auth.currentUser.photoURL){ alert("No photo to delete ❌"); return; }
+  const storageRef = ref(storage, `profilePhotos/${auth.currentUser.uid}`);
+  try{
+    await deleteObject(storageRef).catch(()=>{});
+    await updateProfile(auth.currentUser,{photoURL:null});
+    displayNameAvatar(sessionStorage.getItem("fullname"));
+    alert("Profile photo deleted ✅");
+  }catch(err){console.error(err); alert("Failed to delete photo ❌");}
+});
+
+// Logout
+document.getElementById("logoutBtn").addEventListener("click", async ()=>{
+  await auth.signOut();
+  sessionStorage.clear();
+  window.location.href="login.html";
+});
+
+// Sidebar toggle
+const toggleBtn = document.getElementById("toggleBtn");
+const sidebar = document.getElementById("sidebar");
+const mainContent = document.getElementById("mainContent");
+toggleBtn.addEventListener("click", ()=>{
+  sidebar.classList.toggle("active");
+  mainContent.classList.toggle("shift");
+});
+</script>
+</body>
+</html>
