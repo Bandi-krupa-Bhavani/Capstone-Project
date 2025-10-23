@@ -1,0 +1,440 @@
+<style>
+    :root {
+      --sidebar-w: 220px;
+      --accent-1: #d4a373;
+      --accent-2: #c17c4a;
+      --text-brown: #7b3f00;
+      --gold: #b7791f;
+    }
+
+    html,body { height:100%; margin:0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background:
+        linear-gradient(to bottom, rgba(227,190,154,0.8), rgba(243,244,246,0.9)),
+        url("https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?q=80&w=1770&auto=format&fit=crop&ixlib=rb-4.0.3&s=0a4f4cc9a5aa5dc6a1f0c471b8b9f0b3") no-repeat center center fixed;
+      background-size: cover;
+      color: #1f2937;
+      display: flex; /* sidebar + main */
+      min-height: 100vh;
+    }
+
+    /* SIDEBAR */
+    .sidebar {
+      width: 0;
+      background: linear-gradient(to bottom, var(--accent-1), var(--accent-2));
+      color: white;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: width 0.3s ease;
+      flex-shrink: 0;
+    }
+    .sidebar.open { width: var(--sidebar-w); padding: 1rem; }
+    .sidebar h2 {
+      font-family: 'Playfair Display', serif;
+      margin: 0 0 0.75rem 0;
+      font-size: 1.5rem;
+      line-height:2;
+    }
+    .nav-link {
+      display:flex;
+      align-items:center;
+      gap:0.75rem;
+      padding:0.6rem 0.75rem;
+      border-radius:0.5rem;
+      color: white;
+      text-decoration: none;
+      font-weight:600;
+      transition: background .18s ease;
+    }
+    .nav-link:hover { background: rgba(255,255,255,0.12); }
+    .nav-link.active { background: rgba(255,255,255,0.18); }
+
+    /* MAIN */
+    .main-layout {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      transition: margin-left 0.3s ease;
+    }
+
+    header {
+      background: linear-gradient(to right, var(--accent-1), var(--accent-2));
+      color: white;
+      padding: 1rem 1.5rem;
+      display:flex;
+      align-items:center;
+      gap:1rem;
+    }
+    .toggle-btn {
+      background:none;
+      border:none;
+      font-size:1.5rem;
+      color:white;
+      cursor:pointer;
+    }
+    header .logo { font-weight:700; font-size:1.05rem; }
+    .search-box {
+      position: relative;
+      flex: 1;
+      max-width: 720px;
+      margin-left: 8px;
+      margin-right: 8px;
+    }
+    .search-box input {
+      width:100%;
+      padding:0.85rem 3rem 0.85rem 1rem;
+      border-radius:9999px;
+      border:2px solid var(--accent-1);
+      font-size:1rem;
+      background:white;
+      transition: all .22s ease;
+    }
+    .search-box input:focus {
+      outline: none;
+      border-color: var(--accent-2);
+      box-shadow: 0 0 8px rgba(193,124,74,0.25);
+    }
+    .search-box i {
+      position:absolute;
+      right:1rem;
+      top:50%;
+      transform:translateY(-50%);
+      color: #a1622d;
+      cursor:pointer;
+      font-size:1.15rem;
+    }
+
+    .profile { cursor:pointer; font-size:1.2rem; position:relative; }
+    .profile-menu {
+      position:absolute;
+      top:56px;
+      right:12px;
+      background:white;
+      border-radius:8px;
+      box-shadow:0 6px 20px rgba(0,0,0,0.12);
+      display:none;
+      flex-direction:column;
+      min-width:150px;
+      overflow:hidden;
+      z-index:1000;
+    }
+    .profile-menu button {
+      background:none;
+      border:none;
+      text-align:left;
+      padding:.6rem 0.9rem;
+      width:100%;
+      cursor:pointer;
+      font-family:inherit;
+      font-size:.95rem;
+    }
+    .profile-menu button:hover { background:#f3f4f6; }
+
+    /* content area */
+    .content-area {
+      display:flex;
+      gap:2rem;
+      align-items:flex-start;
+      padding: 1.5rem;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .main { flex: 1; min-width: 0; }
+
+    h2 { font-size:1.5rem; font-weight:700; margin:0 0 1rem 0; color:#111827; }
+
+    .genres, .domains, .books { margin-bottom:1.75rem; }
+
+    .grid { display:grid; gap:1rem; }
+    .genres .grid { grid-template-columns: repeat(auto-fill,minmax(160px,1fr)); }
+
+    .genres h3, .domains h3 {
+      font-family: 'Playfair Display', serif;
+      font-weight:700;
+      font-size:1.25rem;
+      color: #5a3825;
+      margin:0 0 0.75rem 0;
+    }
+
+    .genres .card, .domains .domain {
+      background:white;
+      padding:0.95rem;
+      border-radius:12px;
+      box-shadow:0 2px 6px rgba(0,0,0,0.06);
+      display:flex;
+      align-items:center;
+      gap:0.6rem;
+      font-family:'Playfair Display', serif;
+      font-size:1.02rem;
+      color:var(--text-brown);
+      border:1px solid #f0e0d1;
+      transition: all .22s ease;
+    }
+    .genres .card i, .domains .domain h4 i { color: var(--gold); font-size:1.05rem; }
+    .genres .card:hover, .domains .domain:hover {
+      transform: translateY(-3px);
+      box-shadow:0 8px 20px rgba(0,0,0,0.08);
+      border-color: var(--accent-1);
+      color:#4a2c1a;
+    }
+
+    .domains .domain { flex-direction:column; align-items:flex-start; width:100%; margin-bottom:0.75rem; }
+    .domain h4 {
+      margin:0;
+      font-weight:600;
+      width:100%;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      font-family: 'Playfair Display', serif;
+      font-size:1.02rem;
+      color:var(--text-brown);
+      cursor:pointer;
+    }
+    .domain .subs { display:none; margin-top:0.5rem; }
+    .domain.open .subs { display:block; }
+
+    /* Subdomains inside CS */
+    .sub-domain h5 {
+      margin:0.5rem 0 0;
+      font-weight:600;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      font-family: 'Playfair Display', serif;
+      font-size:1rem;
+      color:var(--text-brown);
+      cursor:pointer;
+    }
+    .sub-domain .subs { display:none; margin:0.5rem 0 0.5rem 1rem; }
+    .sub-domain.open .subs { display:block; }
+
+    .domain .subs button {
+      margin-right:0.5rem;
+      margin-bottom:0.35rem;
+      padding:0.45rem 0.6rem;
+      border-radius:8px;
+      border:1px solid #e6e6e6;
+      background:#fff;
+      cursor:pointer;
+      font-size:0.9rem;
+    }
+
+    /* Books */
+    .books .card { background:white; padding:0.9rem; border-radius:12px; box-shadow:0 2px 6px rgba(0,0,0,0.06); }
+    .books .card h5 { margin:0.2rem 0; font-weight:600; }
+
+    /* ====== BOOK COVERS IN ROW (SIDE BY SIDE) ====== */
+.covers {
+  display: flex;
+  flex-wrap: wrap;       /* move to next line if space not enough */
+  gap: 20px;             /* space between each book */
+  justify-content: flex-start; /* align books from left */
+  align-items: flex-start;
+}
+
+.book {
+  width: 150px;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.book img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.book p {
+  margin-top: 8px;
+  font-weight: 600;
+  color: var(--text-brown);
+}
+
+.book:hover {
+  transform: scale(1.05);
+}
+
+
+    /* Aside panels */
+    aside { width:280px; flex-shrink:0; }
+    aside .panel {
+      background:white;
+      border-radius:14px;
+      padding:1.25rem;
+      margin-bottom:1.5rem;
+      box-shadow:0 4px 10px rgba(0,0,0,0.08);
+      font-family:'Inter', sans-serif;
+    }
+    aside .panel strong {
+      display:block;
+      font-family:'Playfair Display', serif;
+      font-size:1.1rem;
+      margin-bottom:0.75rem;
+      color:#4a2c1a;
+    }
+    .progress-bar {
+      background:#f1f1f1;
+      height:8px;
+      border-radius:9999px;
+      overflow:hidden;
+      margin-top:0.5rem;
+    }
+    .progress-fill {
+      width:0%;
+      background:linear-gradient(to right,#4f46e5,#7c3aed);
+      height:100%;
+      transition: width 0.3s ease;
+    }
+    .quick-actions { display:flex; gap:0.6rem; flex-wrap:wrap; }
+    .quick-actions button {
+      flex:1;
+      border:none;
+      padding:0.6rem 1rem;
+      border-radius:8px;
+      background:linear-gradient(to right,#d4a373,#c17c4a);
+      color:white;
+      font-weight:600;
+      cursor:pointer;
+      transition:background 0.2s;
+    }
+    .quick-actions button:hover { background:linear-gradient(to right,#c17c4a,#a1622d); }
+
+    /* chatbot */
+    .chatbot-btn {
+      position:fixed; right:1.5rem; bottom:1.5rem;
+      background:linear-gradient(to right,#4f46e5,#7c3aed);
+      color:white; border:none;
+      border-radius:50%; width:60px; height:60px;
+      display:flex; align-items:center; justify-content:center;
+      font-size:1.5rem; cursor:pointer;
+      box-shadow:0 4px 12px rgba(0,0,0,.2);
+    }
+    .chat-window {
+      position:fixed; right:1.5rem; bottom:90px;
+      width:320px; background:white; border-radius:1rem;
+      box-shadow:0 4px 12px rgba(0,0,0,.2);
+      display:none; flex-direction:column; overflow:hidden;
+    }
+    .chat-window header {
+      background:linear-gradient(to right,#4f46e5,#7c3aed);
+      padding:.5rem 1rem; color:white; font-weight:600;
+    }
+    .chat-messages { padding:1rem; flex:1; overflow-y:auto; }
+    .chat-input { display:flex; border-top:1px solid #e5e7eb; }
+    .chat-input input { flex:1; border:none; padding:.5rem; }
+    .chat-input button { background:#4f46e5; color:white; border:none; padding:.5rem 1rem; }
+
+    /* Footer */
+    .footer {
+      position: fixed;
+      bottom: 15px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(to right, #4a2c1a, #7b3f00);
+      color: #fff;
+      padding: 0.6rem 1.5rem;
+      border-radius: 9999px;
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem;
+      font-weight: 600;
+      letter-spacing: 0.4px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      z-index: 1000;
+    }
+
+    /* --- COURSE IMAGE SIZE FIX --- */
+.domain img,
+.sub-domain img {
+  width: 120px;   /* ~5 cm width */
+  height: 120px;  /* make it uniform */
+  object-fit: contain;
+  margin: 0.5rem;
+}
+
+/* ===================== DOMAIN & SUBDOMAIN STYLE UPGRADE ===================== */
+
+/* Main section title like "📚 Explore Domains" */
+.section-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 2rem;
+  color: #4a2c1a;
+  text-shadow: 1px 1px 3px rgba(122, 60, 10, 0.2);
+  margin-bottom: 1.5rem;
+  border-bottom: 3px solid var(--accent-1);
+  display: inline-block;
+  padding-bottom: 0.3rem;
+}
+
+/* Domain title (e.g., Computer Science, Civil Engineering, etc.) */
+.domain h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.5rem;
+  color: var(--gold);
+  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.15);
+  background: linear-gradient(to right, #fff7ed, #f8ebe0);
+  border-left: 6px solid var(--accent-2);
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  margin-top: 1.2rem;
+  margin-bottom: 1rem;
+}
+
+/* Subsection under each domain (like CS Fundamentals, Programming, etc.) */
+.domain h4 {
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: #4a2c1a;
+  letter-spacing: 0.4px;
+  background: linear-gradient(to right, #fff, #f6f2ee);
+  border-left: 4px solid var(--accent-1);
+  padding: 0.3rem 0.7rem;
+  border-radius: 5px;
+  margin-top: 0.8rem;
+}
+
+/* Optional hover glow for better interactivity */
+.domain h4:hover {
+  background: #fff7ed;
+  color: var(--accent-2);
+  transform: scale(1.02);
+  transition: all 0.2s ease;
+}
+
+/* Sub-domain title (if you ever add nested subtopics) */
+.sub-domain h5 {
+  font-size: 1.05rem;
+  color: #5b3520;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  margin: 0.5rem 0;
+  border-left: 3px solid #d4a373;
+  padding-left: 0.5rem;
+}
+
+/* Make spacing around each domain area consistent */
+.domain {
+  background: rgba(202, 159, 90, 0.7);
+  border-radius: 10px;
+  padding: 1rem;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.05);
+  margin-bottom: 1.5rem;
+}
+
+/* Optional hover effect on whole domain block */
+.domain:hover {
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+
+
+
+  </style>
