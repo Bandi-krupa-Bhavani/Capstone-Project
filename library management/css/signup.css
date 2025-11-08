@@ -6,9 +6,9 @@
 }
 .password-toggle {
   position: absolute;
-  top: 70%;
+  top: 50%;
   right: 12px;
-  transform: translateY(-50%);
+  transform: translateY(-15%);
   cursor: pointer;
   font-size: 18px;
   color: #555;
@@ -17,6 +17,15 @@
 
 .password-toggle:hover {
   color: #000;
+}
+
+/* Ensure consistent input box height and spacing */
+.input-group input[type="password"],
+.input-group input[type="text"] {
+  padding-right: 40px;
+  line-height: 1.4; /* keeps height consistent */
+  box-sizing: border-box;
+  height: 40px;     /* fixed height for consistent vertical alignment */
 }
 
   .error {

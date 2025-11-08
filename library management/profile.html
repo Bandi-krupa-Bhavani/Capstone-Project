@@ -32,9 +32,7 @@
   <div class="actions">
   <a href="edit-profile.html"><button class="action-btn"><span>✏️</span> Edit Profile</button></a>
   <a href="password-security.html"><button class="action-btn"><span>🔒</span> Password & Security</button></a>
-  <a href="notifications.html"><button class="action-btn"><span>🔔</span> Notifications</button></a>
   <a href="help-support.html"><button class="action-btn"><span>❓</span> Help & Support</button></a>
-  <a href="privacy-settings.html"><button class="action-btn"><span>🛡️</span> Privacy Settings</button></a>
   <button class="action-btn" id="logoutBtn"><span>🚪</span> Logout</button>
 </div>
 </div>
@@ -176,7 +174,7 @@ document.getElementById("deletePhotoBtn").addEventListener("click", async () => 
 document.getElementById("logoutBtn").addEventListener("click", async ()=>{
   await auth.signOut();
   sessionStorage.clear();
-  window.location.href="home   .html";
+  window.location.href="home  .html";
 });
 
 // Sidebar toggle
