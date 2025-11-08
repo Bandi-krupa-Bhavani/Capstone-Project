@@ -5,48 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Edit Profile - BookVerse</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-<style>
-  body { font-family: Arial, sans-serif; background: #f9f9f9; padding: 20px; }
-  .profile-form { max-width: 500px; margin: auto; background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-  .profile-form h2 { text-align: center; margin-bottom: 20px; }
-  .form-group { margin-bottom: 15px; }
-  label { display: block; margin-bottom: 5px; font-weight: 600; }
-  input, textarea { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-size: 14px; }
-  input[readonly] { background: #eee; color: #555; }
-  textarea { resize: vertical; }
-  button { background: #3e2c20; color: #fff; padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; }
-  button:hover { background: #5a3d2b; }
-  small { display: block; margin-top: 4px; color: red; font-size: 13px; }
-  
-  .gender-options {
-    display: flex;
-    gap: 10px;
-    margin-top: 10px;
-  }
-  .gender-card {
-    width: 80px;
-    height: 40px;
-    border: 2px solid #ccc;
-    border-radius: 8px;
-    text-align: center;
-    font-size: 14px;
-    line-height: 1.2;
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    transition: all 0.2s;
-    background: #f9f9f9;
-  }
-  .gender-card:hover { border-color: #3e2c20; background: #fff; }
-  .gender-card.selected { border-color: #3e2c20; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
-
-  input.error-input, textarea.error-input { border-color: red; }
-</style>
+<link rel="stylesheet" href="css/edit-profile.css">
 </head>
 <body>
+<div class="sidebar" id="sidebar">
+  <h3 style="color:#444">📚 BOOKVERSE</h3>
+  <a href="dashboard.html"><i class="fa-solid fa-house"></i> Dashboard</a>
+  <a href="profile.html"><i class="fa-solid fa-user"></i> Profile</a>
+  <a href="library.html"><i class="fa-solid fa-book-open"></i> My Library</a>
+  <a href="home.html"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+</div>
 
+<button class="toggle-btn" id="toggleBtn">☰</button>
 <div class="profile-form">
   <h2>Edit Profile</h2>
 
@@ -197,6 +167,14 @@ saveBtn.addEventListener("click", async () => {
     successMessage.textContent = "❌ Failed to update profile!";
     successMessage.style.color = "red";
   }
+});
+// Sidebar toggle
+const toggleBtn = document.getElementById("toggleBtn");
+const sidebar = document.getElementById("sidebar");
+const mainContent = document.getElementById("mainContent");
+toggleBtn.addEventListener("click", ()=>{
+  sidebar.classList.toggle("active");
+  mainContent.classList.toggle("shift");
 });
 </script>
 
