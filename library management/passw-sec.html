@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Password & Security</title>
+<style>
+/* Background */
+body {
+  font-family: "Poppins", sans-serif;
+  background: linear-gradient(135deg, #f5e3d7, #e8c9a9);
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  margin: 0;
+}
+
+/* Glass Card */
+.security-form {
+  width: 420px;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(15px);
+  border-radius: 16px;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+  padding: 35px 30px;
+  color: #3e2c20;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+/* Headings */
+.security-form h2 {
+  font-size: 24px;
+  margin-bottom: 25px;
+  color: #2b1d13;
+  letter-spacing: 0.5px;
+}
+
+.security-form h3 {
+  text-align: left;
+  margin-top: 25px;
+  margin-bottom: 10px;
+  color: #3e2c20;
+  font-size: 18px;
+}
+
+/* Inputs */
+.form-group {
+  margin-bottom: 15px;
+  text-align: left;
+}
+
+label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 600;
+}
+
+input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  transition: 0.3s;
+}
+
+input:focus {
+  border-color: #3e2c20;
+  outline: none;
+  box-shadow: 0 0 4px rgba(62, 44, 32, 0.3);
+}
+
+/* Buttons */
+button {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  cursor: pointer;
+  transition: 0.3s;
+  font-weight: 600;
+}
+
+#updatePasswordBtn {
+  background: #3e2c20;
+  color: white;
+}
+
+#updatePasswordBtn:hover {
+  background: #5a3d2b;
+}
+
+.delete-btn {
+  background: #d9534f;
+  color: white;
+  margin-top: 10px;
+}
+
+.delete-btn:hover {
+  background: #b52a25;
+}
+
+/* Info text */
+.info {
+  margin-top: 12px;
+  font-size: 13px;
+  color: #3e2c20;
+}
+
+/* Modal Styles */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 2000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  backdrop-filter: blur(5px);
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content {
+  background: white;
+  padding: 25px;
+  border-radius: 10px;
+  text-align: center;
+  width: 300px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.modal-content h4 {
+  color: #2b1d13;
+  margin-bottom: 15px;
+}
+
+.modal-content button {
+  width: 45%;
+  margin: 5px;
+}
+
+.cancel-btn {
+  background: #aaa;
+}
+
+.cancel-btn:hover {
+  background: #888;
+}
+</style>
+</head>
+<body>
+
+<div class="security-form">
+  <h2>🔒 Password & Security</h2>
+
+  <h3>Change Password</h3>
+  <div class="form-group">
+    <label>Current Password</label>
+    <input type="password" id="currentPassword" placeholder="Enter current password">
+  </div>
+  <div class="form-group">
+    <label>New Password</label>
+    <input type="password" id="newPassword" placeholder="Enter new password">
+  </div>
+  <div class="form-group">
+    <label>Confirm New Password</label>
+    <input type="password" id="confirmPassword" placeholder="Confirm new password">
+  </div>
+  <button id="updatePasswordBtn">Update Password</button>
+
+  <div class="info" id="passwordMessage"></div>
+
+  <h3>Account Management</h3>
+  <p style="font-size:14px;">You can permanently delete your account and all associated data.</p>
+  <button class="delete-btn" id="deleteAccountBtn">Delete Account</button>
+
+  <div class="info" id="lastLoginInfo"></div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal" id="confirmModal">
+  <div class="modal-content">
+    <h4>Are you sure?</h4>
+    <p>This action cannot be undone.</p>
+    <button id="confirmDeleteBtn" class="delete-btn">Yes, Delete</button>
+    <button class="cancel-btn" id="cancelDeleteBtn">Cancel</button>
+  </div>
+</div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js"></script>
+
+<script>
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  appId: "YOUR_APP_ID"
+};
+
+const app = firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+
+// Display last login info
+auth.onAuthStateChanged((user) => {
+  if (user) {
+    document.getElementById("lastLoginInfo").innerText = `Last login: ${user.metadata.lastSignInTime}`;
+  } else {
+    document.getElementById("lastLoginInfo").innerText = "Not logged in";
+  }
+});
+
+// Update password
+document.getElementById("updatePasswordBtn").addEventListener("click", async () => {
+  const user = auth.currentUser;
+  const currentPassword = document.getElementById("currentPassword").value;
+  const newPassword = document.getElementById("newPassword").value;
+  const confirmPassword = document.getElementById("confirmPassword").value;
+  const msg = document.getElementById("passwordMessage");
+
+  if (newPassword !== confirmPassword) {
+    msg.innerText = "New passwords do not match!";
+    msg.style.color = "red";
+    return;
+  }
+
+  try {
+    const credential = firebase.auth.EmailAuthProvider.credential(user.email, currentPassword);
+    await user.reauthenticateWithCredential(credential);
+    await user.updatePassword(newPassword);
+    msg.innerText = "Password updated successfully!";
+    msg.style.color = "green";
+  } catch (error) {
+    msg.innerText = error.message;
+    msg.style.color = "red";
+  }
+});
+
+// Delete account with modal confirmation
+const modal = document.getElementById("confirmModal");
+document.getElementById("deleteAccountBtn").addEventListener("click", () => {
+  modal.style.display = "flex";
+});
+
+document.getElementById("cancelDeleteBtn").addEventListener("click", () => {
+  modal.style.display = "none";
+});
+
+document.getElementById("confirmDeleteBtn").addEventListener("click", async () => {
+  const user = auth.currentUser;
+  try {
+    await user.delete();
+    alert("Your account has been deleted.");
+    window.location.href = "index.html";
+  } catch (error) {
+    alert("Error: " + error.message);
+  }
+});
+</script>
+
+</body>
+</html>

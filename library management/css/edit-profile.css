@@ -5,7 +5,6 @@ body {
   display: flex;
   justify-content: center; /* center horizontally */
   align-items: center;     /* center vertically */
-  overflow: hidden;        /* fully remove scroll */
   margin: 0;
   background: 
     linear-gradient(rgba(237, 202, 169, 0.7), rgba(237, 202, 169, 0.8)), 
@@ -16,15 +15,38 @@ body {
   transition: margin-left 0.3s ease;
 }
 
+/* Header */
+header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background: rgba(62, 44, 32, 0.95);
+  color: #F5E6D3;
+  padding: 15px 50px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 10;
+}
+
+header .logo {
+  font-size: 22px;
+  font-weight: bold;
+  color: #F5E6D3;
+}
+
 /* Profile Form */
 .profile-form { 
   width: 100%;
   max-width: 500px; 
   background: #fff; 
-  padding: 25px 30px; 
-  border-radius: 22px; 
+  padding: 20px 30px ; 
+  border-radius: 12px; 
   box-shadow: 10px 15px 10px rgba(0,0,0,0.1); 
   position: relative; /* keeps it centered and steady */
+  margin: 160px auto 40px; /* add top margin to move form below header */
+  box-sizing: border-box; 
 }
 
 .profile-form h2 { 
@@ -82,7 +104,7 @@ small {
 /* Sidebar */
 .sidebar { 
   position: fixed; 
-  top: 0; 
+  top: 60px; 
   left: -250px; 
   width: 250px; 
   height: 100%; 
@@ -106,7 +128,7 @@ small {
 
 .toggle-btn { 
   position: fixed; 
-  top: 15px; 
+  top: 70px; 
   left: 15px; 
   font-size: 25px; 
   background: rgba(62, 44, 32, 0.95); 
