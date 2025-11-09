@@ -37,10 +37,10 @@
   </div>
 
   <div class="form-group">
-    <label for="phone">Phone Number</label>
-    <input type="text" id="phone" placeholder="Enter your phone number">
-    <small id="phoneError"></small>
-  </div>
+  <label for="phone">Phone Number</label>
+  <input type="text" id="phone" placeholder="Enter your phone number" required>
+  <small id="phoneError"></small>
+</div>
 
   <div class="form-group">
     <label for="about">About Me</label>
@@ -92,24 +92,38 @@ genderCards.forEach(card => {
   });
 });
 
-// Validation
-function validateField(input, regex, errorElement, message) {
-  if (input.value.trim() !== "" && !regex.test(input.value.trim())) {
-    errorElement.textContent = message;
-    input.classList.add("error-input");
-    return false;
-  } else {
-    errorElement.textContent = "";
-    input.classList.remove("error-input");
-    return true;
-  }
-}
-
+// --- Real-time Validation ---
+// Name
 nameInput.addEventListener("input", () => {
-  validateField(nameInput, /^[A-Za-z\s]+$/, nameError, "Only letters allowed.");
+  const val = nameInput.value.trim();
+  if (val === "") {
+    nameError.textContent = "Name is required.";
+    nameInput.classList.add("error-input");
+  } else if (!/^[A-Za-z\s]+$/.test(val)) {
+    nameError.textContent = "Only letters allowed.";
+    nameInput.classList.add("error-input");
+  } else {
+    nameError.textContent = "";
+    nameInput.classList.remove("error-input");
+  }
 });
+
+// Phone
 phoneInput.addEventListener("input", () => {
-  validateField(phoneInput, /^\d{10}$/, phoneError, "Phone must be 10 digits.");
+  const val = phoneInput.value.trim();
+  if (val === "") {
+    phoneError.textContent = "Phone number is required.";
+    phoneInput.classList.add("error-input");
+  } else if (!/^\d*$/.test(val)) {
+    phoneError.textContent = "Only digits allowed.";
+    phoneInput.classList.add("error-input");
+  } else if (val.length !== 10) {
+    phoneError.textContent = "Phone must be 10 digits.";
+    phoneInput.classList.add("error-input");
+  } else {
+    phoneError.textContent = "";
+    phoneInput.classList.remove("error-input");
+  }
 });
 
 // Load user data
@@ -119,7 +133,6 @@ onAuthStateChanged(auth, async (user) => {
   try {
     const usersRef = doc(db, "users", user.uid);
     const usersSnap = await getDoc(usersRef);
-
     const editRef = doc(db, "editProfiles", user.uid);
     const editSnap = await getDoc(editRef);
 
@@ -151,7 +164,7 @@ onAuthStateChanged(auth, async (user) => {
   }
 });
 
-// Save profile
+// --- Save Profile ---
 saveBtn.addEventListener("click", async () => {
   const user = auth.currentUser;
   if (!user) return;
@@ -161,15 +174,48 @@ saveBtn.addEventListener("click", async () => {
   const aboutVal = aboutInput.value.trim();
   const genderVal = genderInput.value;
 
-  const isNameValid = validateField(nameInput, /^[A-Za-z\s]+$/, nameError, "Only letters allowed.");
-  const isPhoneValid = validateField(phoneInput, /^\d{10}$/, phoneError, "Phone must be 10 digits.");
-  const isGenderValid = genderVal !== "";
-  if (!isGenderValid) genderError.textContent = "Please select a gender.";
+  let isValid = true;
 
-  if (!isNameValid || !isPhoneValid || !isGenderValid) return;
+  // Validate Name
+  if (nameVal === "") {
+    nameError.textContent = "Name is required.";
+    nameInput.classList.add("error-input");
+    isValid = false;
+  } else if (!/^[A-Za-z\s]+$/.test(nameVal)) {
+    nameError.textContent = "Only letters allowed.";
+    nameInput.classList.add("error-input");
+    isValid = false;
+  } else {
+    nameError.textContent = "";
+    nameInput.classList.remove("error-input");
+  }
 
+  // Validate Phone
+  if (phoneVal === "") {
+    phoneError.textContent = "Phone number is required.";
+    phoneInput.classList.add("error-input");
+    isValid = false;
+  } else if (!/^\d{10}$/.test(phoneVal)) {
+    phoneError.textContent = "Phone must be 10 digits.";
+    phoneInput.classList.add("error-input");
+    isValid = false;
+  } else {
+    phoneError.textContent = "";
+    phoneInput.classList.remove("error-input");
+  }
+
+  // Validate Gender
+  if (genderVal === "") {
+    genderError.textContent = "Please select a gender.";
+    isValid = false;
+  } else {
+    genderError.textContent = "";
+  }
+
+  if (!isValid) return;
+
+  // Save to Firebase
   const editRef = doc(db, "editProfiles", user.uid);
-
   try {
     await setDoc(editRef, {
       fullname: nameVal,
@@ -180,7 +226,6 @@ saveBtn.addEventListener("click", async () => {
       email: user.email
     });
 
-    // 🔥 Keep Firebase Auth displayName in sync
     await updateProfile(user, { displayName: nameVal });
 
     successMessage.textContent = "✅ Profile updated successfully!";
