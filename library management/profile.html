@@ -37,72 +37,69 @@
     </div>
   </div>
 
-  <script type="module">
-    import { auth, db } from "./firebase-config.js";
-    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+<script type="module">
+import { auth, db } from "./firebase-config.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    const profileName = document.getElementById("profileName");
-    const profilePhotoContainer = document.getElementById("profilePhotoContainer");
+const profileName = document.getElementById("profileName");
+const profilePhotoContainer = document.getElementById("profilePhotoContainer");
 
-    // Display first letter avatar
-    function displayNameAvatar(fullname = "User") {
-      profileName.textContent = fullname;
-      const letter = fullname.charAt(0).toUpperCase();
-      profilePhotoContainer.innerHTML = `<div class="avatar">${letter}</div>`;
+function displayNameAvatar(fullname = "User") {
+  profileName.textContent = fullname;
+  const letter = fullname.charAt(0).toUpperCase();
+  profilePhotoContainer.innerHTML = `<div class="avatar">${letter}</div>`;
+}
+
+// --- Display cached name immediately ---
+const cachedName = sessionStorage.getItem("fullname");
+if (cachedName) {
+  displayNameAvatar(cachedName);
+}
+
+onAuthStateChanged(auth, (user) => {
+  if (!user) {
+    sessionStorage.clear();
+    window.location.href = "login.html";
+    return;
+  }
+
+  const editRef = doc(db, "editProfiles", user.uid);
+
+  onSnapshot(editRef, (docSnap) => {
+    let fullname = "User";
+    if (docSnap.exists() && docSnap.data().fullname?.trim()) {
+      fullname = docSnap.data().fullname.trim();
+    } else if (user.displayName) {
+      fullname = user.displayName;
     }
 
-    // --- Show cached name immediately if recent ---
-    const cachedName = sessionStorage.getItem("fullname");
-    const cachedTime = parseInt(sessionStorage.getItem("fullnameUpdatedAt") || 0);
-    const now = new Date().getTime();
+    // Update sessionStorage with timestamp
+    sessionStorage.setItem("fullname", fullname);
+    sessionStorage.setItem("fullnameUpdatedAt", Date.now());
 
-    if (cachedName && (now - cachedTime < 5 * 60 * 1000)) { // 5 minutes threshold
-      displayNameAvatar(cachedName);
+    // Update UI only if changed
+    if (profileName.textContent !== fullname) {
+      displayNameAvatar(fullname);
     }
+  });
+});
 
-    // Auth listener
-    onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        sessionStorage.clear();
-        window.location.href = "login.html";
-        return;
-      }
+// Logout
+document.getElementById("logoutBtn").addEventListener("click", async () => {
+  await auth.signOut();
+  sessionStorage.clear();
+  window.location.href = "home.html";
+});
 
-      const editRef = doc(db, "editProfiles", user.uid);
-
-      // Real-time listener for Firestore document
-      onSnapshot(editRef, (docSnap) => {
-        let fullname = "User";
-        if (docSnap.exists() && docSnap.data().fullname?.trim()) {
-          fullname = docSnap.data().fullname.trim();
-        } else if (user.displayName) {
-          fullname = user.displayName;
-        }
-
-        // Update cache with timestamp
-        sessionStorage.setItem("fullname", fullname);
-        sessionStorage.setItem("fullnameUpdatedAt", new Date().getTime());
-
-        displayNameAvatar(fullname); // Updates name and avatar instantly
-      });
-    });
-
-    // Logout
-    document.getElementById("logoutBtn").addEventListener("click", async () => {
-      await auth.signOut();
-      sessionStorage.clear();
-      window.location.href = "home.html";
-    });
-
-    // Sidebar toggle
-    const toggleBtn = document.getElementById("toggleBtn");
-    const sidebar = document.getElementById("sidebar");
-    const mainContent = document.getElementById("mainContent");
-    toggleBtn.addEventListener("click", () => {
-      sidebar.classList.toggle("active");
-      mainContent.classList.toggle("shift");
-    });
-  </script>
+// Sidebar toggle
+const toggleBtn = document.getElementById("toggleBtn");
+const sidebar = document.getElementById("sidebar");
+const mainContent = document.getElementById("mainContent");
+toggleBtn.addEventListener("click", () => {
+  sidebar.classList.toggle("active");
+  mainContent.classList.toggle("shift");
+});
+</script>
 </body>
 </html>

@@ -228,6 +228,10 @@ saveBtn.addEventListener("click", async () => {
 
     await updateProfile(user, { displayName: nameVal });
 
+    // ✅ Update sessionStorage immediately
+    sessionStorage.setItem("fullname", nameVal);
+    sessionStorage.setItem("fullnameUpdatedAt", Date.now());
+
     successMessage.textContent = "✅ Profile updated successfully!";
     successMessage.style.color = "green";
   } catch (err) {
