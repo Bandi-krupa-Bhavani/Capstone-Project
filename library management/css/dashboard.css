@@ -1,5 +1,4 @@
-<style>
-    :root {
+:root {
       --sidebar-w: 220px;
       --accent-1: #d4a373;
       --accent-2: #c17c4a;
@@ -434,7 +433,3 @@
   box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
   transition: all 0.3s ease;
 }
-
-
-
-  </style>
