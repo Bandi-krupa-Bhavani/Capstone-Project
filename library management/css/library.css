@@ -1,0 +1,193 @@
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: 
+    linear-gradient(rgba(237, 202, 169, 0.7), rgba(237, 202, 169, 0.8)), 
+    url("assets/images/profile-page.jpg");
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed; /* keeps image fixed on scroll */
+  transition: margin-left 0.3s ease;
+  }
+
+/* Header */
+header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background: rgba(62, 44, 32, 0.95);
+  color: #F5E6D3;
+  padding: 15px 50px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 10;
+}
+
+header .logo {
+  font-size: 22px;
+  font-weight: bold;
+  color: #F5E6D3;
+}
+
+/* Sidebar */
+.sidebar { 
+  position: fixed; 
+  top: 60px; 
+  left: -250px; 
+  width: 250px; 
+  height: 100%; 
+  background: transparent; 
+  padding-top: 60px; 
+  transition: left 0.3s ease; 
+}
+
+.sidebar.active { left: 0; }
+
+.sidebar a { 
+  display: block; 
+  padding: 15px 20px; 
+  color: rgba(62, 44, 32, 0.95); 
+  text-decoration: none; 
+  transition: background 0.3s;
+}
+
+.sidebar a:hover { background: rgba(255,255,255,0.2); }
+
+/* Toggle */
+.toggle-btn { 
+  position: fixed; 
+  top: 70px; 
+  left: 15px; 
+  font-size: 25px; 
+  background: rgba(62, 44, 32, 0.95); 
+  color: white; 
+  border: none; 
+  padding: 8px 12px; 
+  border-radius: 6px; 
+  cursor: pointer; 
+  z-index: 1000;
+}
+
+/* Top Bar */
+.top-bar {
+  display: flex;
+  align-items: center;
+  margin-top: 80px;
+  margin-left: 50px;
+  transition: margin-left 0.3s ease;
+}
+
+.top-bar.shift {
+  margin-left: 270px;
+}
+
+.library-title {
+  margin-left: 50px;
+}
+
+.library-title h2 {
+  margin: 0;
+  color: #3e2c20;
+}
+
+.library-title p {
+  margin: 2px 0 0 0;
+  color: #5a3d2b;
+}
+
+/* Content */
+.content {
+  margin-top: 160px;
+  text-align: center;
+  transition: margin-left 0.3s ease;
+}
+
+.content.shift {
+  margin-left: 270px;
+}
+
+/* Cards */
+.library-sections {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 30px;
+  margin-top: 30px;
+}
+
+.section-card {
+  background: rgba(62, 44, 32, 0.1);
+  border: 2px solid rgba(62, 44, 32, 0.3);
+  padding: 25px;
+  width: 250px;
+  border-radius: 15px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.section-card i {
+  font-size: 40px;
+  color: #3e2c20;
+  margin-bottom: 10px;
+}
+
+.section-card:hover {
+  background: rgba(62, 44, 32, 0.2);
+  transform: scale(1.05);
+}
+
+/* Reading/Download/Fav Cards */
+.book-card, .download-card, .fav-card {
+  background: rgba(62, 44, 32, 0.1);
+  border: 2px solid rgba(62, 44, 32, 0.3);
+  border-radius: 12px;
+  padding: 20px;
+  width: 300px;
+  margin: 50px auto;
+  text-align: left;
+}
+
+.book-card img {
+  width: 100%;
+  border-radius: 10px;
+}
+
+.progress-bar {
+  width: 100%;
+  background: #ddd;
+  border-radius: 10px;
+  overflow: hidden;
+  height: 10px;
+  margin-top: 10px;
+}
+
+.progress {
+  background: #3e2c20;
+  height: 10px;
+}
+   /* chatbot */
+    .chatbot-btn {
+      position:fixed; right:1.5rem; bottom:1.5rem;
+      background:linear-gradient(to right,#4f46e5,#7c3aed);
+      color:white; border:none;
+      border-radius:50%; width:60px; height:60px;
+      display:flex; align-items:center; justify-content:center;
+      font-size:1.5rem; cursor:pointer;
+      box-shadow:0 4px 12px rgba(0,0,0,.2);
+    }
+    .chat-window {
+      position:fixed; right:1.5rem; bottom:90px;
+      width:320px; background:white; border-radius:1rem;
+      box-shadow:0 4px 12px rgba(0,0,0,.2);
+      display:none; flex-direction:column; overflow:hidden;
+    }
+    .chat-window header {
+      background:linear-gradient(to right,#4f46e5,#7c3aed);
+      padding:.5rem 1rem; color:white; font-weight:600;
+    }
+    .chat-messages { padding:1rem; flex:1; overflow-y:auto; }
+    .chat-input { display:flex; border-top:1px solid #e5e7eb; }
+    .chat-input input { flex:1; border:none; padding:.5rem; }
+    .chat-input button { background:#4f46e5; color:white; border:none; padding:.5rem 1rem; }

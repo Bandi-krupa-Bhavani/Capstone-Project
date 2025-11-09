@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Downloads | BookVerse</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <link rel="stylesheet" href="css/downloads.css">
+</head>
+<body>
+  <header>
+    <div class="logo"><i class="fas fa-book"></i> BookVerse</div>
+  </header>
+
+  <!-- Toggle + Title -->
+  <div class="top-bar" id="topBar">
+    <button class="toggle-btn" id="toggleBtn">☰</button>
+    <div class="library-title">
+      <h2>✔ Downloads</h2>
+      <p>Access your downloaded books offline.</p>
+    </div>
+  </div>
+
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar">
+    <a href="dashboard.html"><i class="fa-solid fa-house"></i> Dashboard</a>
+    <a href="profile.html"><i class="fa-solid fa-user"></i> Profile</a>
+    <a href="library.html"><i class="fa-solid fa-book-open"></i> My Library</a>
+    <a href="continue-read.html"><i class="fa-solid fa-clock"></i> Continue Reading</a>
+    <a href="downloads.html" class="active"><i class="fa-solid fa-check"></i> Downloads</a>
+    <a href="fav.html"><i class="fa-solid fa-heart"></i> My Favourites</a>
+    <a href="home.html"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+  </div>
+
+  <!-- Main Content -->
+  <div class="content" id="mainContent">
+    <div class="book-list">
+
+      <div class="book-card">
+        <img src="images/book1.jpg" alt="Book 1">
+        <div class="book-info">
+          <h3>Think Like a Monk</h3>
+          <p>by Jay Shetty</p>
+        </div>
+        <i class="fa-solid fa-check-circle download-icon"></i>
+      </div>
+
+      <div class="book-card">
+        <img src="images/book2.jpg" alt="Book 2">
+        <div class="book-info">
+          <h3>Ikigai</h3>
+          <p>by Héctor García & Francesc Miralles</p>
+        </div>
+        <i class="fa-solid fa-check-circle download-icon"></i>
+      </div>
+
+      <div class="book-card">
+        <img src="images/book3.jpg" alt="Book 3">
+        <div class="book-info">
+          <h3>Deep Work</h3>
+          <p>by Cal Newport</p>
+        </div>
+        <i class="fa-solid fa-check-circle download-icon"></i>
+      </div>
+
+    </div>
+  </div>
+
+
+   <!-- chatbot -->
+  <button class="chatbot-btn" onclick="toggleChat()"><i class="fa-solid fa-comments"></i></button>
+  <div class="chat-window" id="chatWindow">
+    <header>Chat with us</header>
+    <div class="chat-messages"></div>
+    <div class="chat-input">
+      <input type="text" placeholder="Type a message...">
+      <button>Send</button>
+    </div>
+  </div>
+  
+   <script>
+document.addEventListener('DOMContentLoaded', () => {
+  const toggleBtn = document.getElementById('toggleBtn');
+  const sidebar = document.getElementById('sidebar');
+  const mainContent = document.getElementById('mainContent');
+  const topBar = document.getElementById('topBar');
+
+  // If toggle button not present on a page, do nothing.
+  if (!toggleBtn) return;
+
+  // Toggle handler - safe: only toggles classes if the element exists
+  toggleBtn.addEventListener('click', () => {
+    if (sidebar) sidebar.classList.toggle('active');
+    if (mainContent) mainContent.classList.toggle('shift');
+    if (topBar) topBar.classList.toggle('shift');
+  });
+});
+  </script>
+</body>
+</html>

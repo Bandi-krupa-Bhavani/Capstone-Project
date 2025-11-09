@@ -1,0 +1,8 @@
+/* Reuse same structure as downloads */
+@import url('downloads.css');
+
+/* Change heart color for favourites */
+.fav-icon {
+  font-size: 24px;
+  color: #c0392b;
+}

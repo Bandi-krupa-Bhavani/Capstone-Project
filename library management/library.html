@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Library | BookVerse</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <link rel="stylesheet" href="css/library.css">
+</head>
+<body>
+  <header>
+    <div class="logo"><i class="fas fa-book"></i> BookVerse</div>
+  </header>
+
+  <!-- Top Bar -->
+  <div class="top-bar" id="topBar">
+    <button class="toggle-btn" id="toggleBtn">☰</button>
+    <div class="library-title">
+      <h2>📚 My Library</h2>
+      <p>Select a section to explore your collection.</p>
+    </div>
+  </div>
+
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar">
+    <a href="dashboard.html"><i class="fa-solid fa-house"></i> Dashboard</a>
+    <a href="profile.html"><i class="fa-solid fa-user"></i> Profile</a>
+    <a href="library.html" class="active"><i class="fa-solid fa-book-open"></i> My Library</a>
+    <a href="home.html"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+  </div>
+
+  <!-- Main Content -->
+  <div class="content" id="mainContent">
+    <div class="library-sections">
+      <div class="section-card" onclick="window.location.href='continue-read.html'">
+        <i class="fa-solid fa-clock"></i>
+        <h3>Continue Reading</h3>
+        <p>Pick up where you left off.</p>
+      </div>
+
+      <div class="section-card" onclick="window.location.href='downloads.html'">
+        <i class="fa-solid fa-download"></i>
+        <h3>Downloads</h3>
+        <p>Access your downloaded books offline.</p>
+      </div>
+
+      <div class="section-card" onclick="window.location.href='fav.html'">
+        <i class="fa-solid fa-heart"></i>
+        <h3>My Favourites</h3>
+        <p>View and manage your favourite books.</p>
+      </div>
+    </div>
+  </div>
+    <!-- chatbot -->
+  <button class="chatbot-btn" onclick="toggleChat()"><i class="fa-solid fa-comments"></i></button>
+  <div class="chat-window" id="chatWindow">
+    <header>Chat with us</header>
+    <div class="chat-messages"></div>
+    <div class="chat-input">
+      <input type="text" placeholder="Type a message...">
+      <button>Send</button>
+    </div>
+  </div>
+
+  <script>
+document.addEventListener('DOMContentLoaded', () => {
+  const toggleBtn = document.getElementById('toggleBtn');
+  const sidebar = document.getElementById('sidebar');
+  const mainContent = document.getElementById('mainContent');
+  const topBar = document.getElementById('topBar');
+
+  // If toggle button not present on a page, do nothing.
+  if (!toggleBtn) return;
+
+  // Toggle handler - safe: only toggles classes if the element exists
+  toggleBtn.addEventListener('click', () => {
+    if (sidebar) sidebar.classList.toggle('active');
+    if (mainContent) mainContent.classList.toggle('shift');
+    if (topBar) topBar.classList.toggle('shift');
+  });
+});
+  </script>
+</body>
+</html>
