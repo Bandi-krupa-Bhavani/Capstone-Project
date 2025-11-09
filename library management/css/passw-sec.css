@@ -87,21 +87,39 @@ button {
 
 button:hover { background: #5a3d2b; }
 
- /* Eyelash icon inside password field */
-    .password-toggle {
-  position: absolute;
-  top: 70%;
-  right: 12px;          /* distance from right inside box */
-  transform: translateY(-50%);
-  cursor: pointer;
-  font-size: 18px;
-  color: #555;
-  line-height: 1;       /* keep icon tight */
+.password-field {
+  position: relative;
+  display: flex;
+  align-items: center;
 }
 
-    .password-toggle:hover {
-      color: #000;
-    }
+.password-field input {
+  width: 100%;
+  padding-right: 40px; /* space for the eye icon */
+  box-sizing: border-box;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 12px;
+  cursor: pointer;
+  color: #555;
+  font-size: 18px;
+  transition: color 0.2s ease;
+}
+
+.password-toggle:hover {
+  color: #000;
+}
+
+.info {
+  font-size: 14px;
+  margin-top: 4px;
+  margin-left: 4px;
+  color: red;
+  transition: opacity 0.2s ease;
+}
+
 
 /* Make parent box more subtle and remove “one big block” feel */
 .security-form {
@@ -178,6 +196,7 @@ button:hover { background: #5a3d2b; }
 
 /* Inputs */
 .form-group {
+   position: relative; /* Add this! */
   margin-bottom: 15px;
   text-align: left;
 }

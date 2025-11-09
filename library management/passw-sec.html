@@ -29,19 +29,26 @@
     <h3>Change Password</h3>
     <div class="form-group">
       <label>Current Password</label>
+       <div class="password-field">
       <input type="password" id="currentPassword" placeholder="Enter current password">
-          <i class="fa-solid fa-eye-slash password-toggle" id="togglePassword"></i>
+      <i class="fa-solid fa-eye-slash password-toggle"></i>
     </div>
+    <div class="info" id="currentPasswordMsg"></div> <!-- Added -->
+  </div>
     <div class="form-group">
       <label>New Password</label>
+       <div class="password-field">
       <input type="password" id="newPassword" placeholder="Enter new password">
-          <i class="fa-solid fa-eye-slash password-toggle" id="togglePassword"></i>
-    </div>
+      <i class="fa-solid fa-eye-slash password-toggle"></i>
+    </div></div>
     <div class="form-group">
       <label>Confirm New Password</label>
+       <div class="password-field">
       <input type="password" id="confirmPassword" placeholder="Confirm new password">
-          <i class="fa-solid fa-eye-slash password-toggle" id="togglePassword"></i>
+      <i class="fa-solid fa-eye-slash password-toggle"></i>
     </div>
+    <div class="info" id="confirmPasswordMsg"></div> <!-- Added -->
+  </div>
     <button id="updatePasswordBtn">Update Password</button>
     <div class="info" id="passwordMessage"></div>
   </div>
@@ -58,7 +65,7 @@
 <div class="modal" id="confirmModal">
   <div class="modal-content">
     <h4>Are you sure?</h4>
-    <p>This action cannot be undone.</p>
+    <p>Your account will be permanently deleted.This action cannot be undone.</p>
     <button id="confirmDeleteBtn" class="delete-btn">Yes, Delete</button>
     <button class="cancel-btn" id="cancelDeleteBtn">Cancel</button>
   </div>
@@ -67,84 +74,207 @@
 <script type="module">
 import { auth } from "./firebase-config.js";
 import {
-  onAuthStateChanged,
   updatePassword,
   EmailAuthProvider,
   reauthenticateWithCredential,
   deleteUser
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
+// Select elements
+const currentPasswordInput = document.getElementById("currentPassword");
+const newPasswordInput = document.getElementById("newPassword");
+const confirmPasswordInput = document.getElementById("confirmPassword");
+const currentPasswordMsg = document.getElementById("currentPasswordMsg");
+const confirmPasswordMsg = document.getElementById("confirmPasswordMsg");
+const globalMsg = document.getElementById("passwordMessage"); // Message below Update btn
+const updateBtn = document.getElementById("updatePasswordBtn");
 
-// Update password
-document.getElementById("updatePasswordBtn").addEventListener("click", async () => {
-  const user = auth.currentUser;
-  const currentPassword = document.getElementById("currentPassword").value;
-  const newPassword = document.getElementById("newPassword").value;
-  const confirmPassword = document.getElementById("confirmPassword").value;
-  const msg = document.getElementById("passwordMessage");
+// Clear current password error message when user types again
+currentPasswordInput.addEventListener("input", () => {
+  currentPasswordMsg.innerText = "";
+});
 
-  if (!user) {
-    msg.innerText = "You must be logged in to change password.";
-    msg.style.color = "red";
+
+// Disable button initially
+updateBtn.disabled = true;
+updateBtn.style.opacity = "0.6";
+updateBtn.style.cursor = "not-allowed";
+
+// ✅ Real-time password validation
+function validatePasswords() {
+  confirmPasswordMsg.innerText = "";
+  globalMsg.innerText = "";
+
+  const current = currentPasswordInput.value;
+  const newPass = newPasswordInput.value;
+  const confirm = confirmPasswordInput.value;
+
+  // If fields are empty
+  if (!newPass || !confirm) {
+    updateBtn.disabled = true;
+    updateBtn.style.opacity = "0.6";
+    updateBtn.style.cursor = "not-allowed";
     return;
   }
 
-  if (newPassword !== confirmPassword) {
-    msg.innerText = "New passwords do not match!";
-    msg.style.color = "red";
+  // Check if new password and confirm match
+  if (newPass !== confirm) {
+    confirmPasswordMsg.innerText = "❌ Passwords do not match.";
+    confirmPasswordMsg.style.color = "red";
+    updateBtn.disabled = true;
+    updateBtn.style.opacity = "0.6";
+    updateBtn.style.cursor = "not-allowed";
+    return;
+  } else {
+    confirmPasswordMsg.innerText = "";
+  }
+
+  // Check if current password and new password are same
+  if (current && current === newPass) {
+    globalMsg.innerText = "⚠️ New password must be different from the current password.";
+    globalMsg.style.color = "red";
+    updateBtn.disabled = true;
+    updateBtn.style.opacity = "0.6";
+    updateBtn.style.cursor = "not-allowed";
+    return;
+  }
+
+  // ✅ If all valid
+  updateBtn.disabled = false;
+  updateBtn.style.opacity = "1";
+  updateBtn.style.cursor = "pointer";
+}
+
+currentPasswordInput.addEventListener("input", validatePasswords);
+newPasswordInput.addEventListener("input", validatePasswords);
+confirmPasswordInput.addEventListener("input", validatePasswords);
+
+// ✅ Update password logic
+updateBtn.addEventListener("click", async () => {
+  const user = auth.currentUser;
+  const currentPassword = currentPasswordInput.value;
+  const newPassword = newPasswordInput.value;
+
+  currentPasswordMsg.innerText = "";
+  globalMsg.innerText = "";
+
+  if (!user) {
+    globalMsg.innerText = "You must be logged in to change password.";
+    globalMsg.style.color = "red";
     return;
   }
 
   try {
     const credential = EmailAuthProvider.credential(user.email, currentPassword);
     await reauthenticateWithCredential(user, credential);
+
+    // Check again if same passwords before updating
+    if (currentPassword === newPassword) {
+      globalMsg.innerText = "⚠️ New password must be different from the current password.";
+      globalMsg.style.color = "red";
+      return;
+    }
+
     await updatePassword(user, newPassword);
-    msg.innerText = "Password updated successfully!";
-    msg.style.color = "green";
+    globalMsg.innerText = "✅ Password updated successfully!";
+    globalMsg.style.color = "green";
+
+    // Reset fields
+    currentPasswordInput.value = "";
+    newPasswordInput.value = "";
+    confirmPasswordInput.value = "";
+    updateBtn.disabled = true;
+    updateBtn.style.opacity = "0.6";
+    updateBtn.style.cursor = "not-allowed";
   } catch (error) {
-    msg.innerText = "Error: " + error.message;
-    msg.style.color = "red";
+    if (error.code === "auth/invalid-credential") {
+      currentPasswordMsg.innerText = "❌ Current password is incorrect.";
+      currentPasswordMsg.style.color = "red";
+    } else if (error.code === "auth/weak-password") {
+      globalMsg.innerText = "⚠️ Your new password is too weak. Try a stronger one.";
+      globalMsg.style.color = "red";
+    } else {
+      globalMsg.innerText = "⚠️ Something went wrong. Please try again.";
+      globalMsg.style.color = "red";
+    }
   }
 });
 
-// Delete account with modal confirmation
+// ✅ Delete account with modal confirmation and success message in the same box
 const modal = document.getElementById("confirmModal");
-document.getElementById("deleteAccountBtn").addEventListener("click", () => {
+const modalContent = modal.querySelector(".modal-content");
+const confirmBtn = document.getElementById("confirmDeleteBtn");
+const cancelBtn = document.getElementById("cancelDeleteBtn");
+const deleteBtn = document.getElementById("deleteAccountBtn");
+
+deleteBtn.addEventListener("click", () => {
+  // Reset modal content each time
+  modalContent.innerHTML = `
+    <h4>Are you sure?</h4>
+    <p>Your account will be permanently deleted.This action cannot be undone.</p>
+    <button id="confirmDeleteBtn" class="delete-btn">Yes, Delete</button>
+    <button class="cancel-btn" id="cancelDeleteBtn">Cancel</button>
+  `;
   modal.style.display = "flex";
-});
 
-document.getElementById("cancelDeleteBtn").addEventListener("click", () => {
-  modal.style.display = "none";
-});
-
-document.getElementById("confirmDeleteBtn").addEventListener("click", async () => {
-  const user = auth.currentUser;
-  if (!user) return alert("No user is signed in.");
-
-  try {
-    await deleteUser(user);
-    alert("Your account has been deleted.");
-    window.location.href = "index.html";
-  } catch (error) {
-    alert("Error: " + error.message);
-  }
-});
-
-// ✅ Password toggle
-  togglePassword.addEventListener("click", () => {
-    const type = loginPassword.getAttribute("type") === "password" ? "text" : "password";
-    loginPassword.setAttribute("type", type);
-    togglePassword.classList.toggle("fa-eye");
-    togglePassword.classList.toggle("fa-eye-slash");
+  // Reattach button listeners (since we recreated the modal content)
+  document.getElementById("cancelDeleteBtn").addEventListener("click", () => {
+    modal.style.display = "none";
   });
 
-// Sidebar toggle
+  document.getElementById("confirmDeleteBtn").addEventListener("click", async () => {
+    const user = auth.currentUser;
+    if (!user) {
+      modalContent.innerHTML = `<p style="color:red;">⚠️ No user is signed in.</p>`;
+      setTimeout(() => (modal.style.display = "none"), 2000);
+      return;
+    }
+
+    try {
+      await deleteUser(user);
+      // Replace modal content with success message
+      modalContent.innerHTML = `
+        <h4 style="color:green;">✅ Your account has been deleted successfully.</h4>
+      `;
+      // Redirect after 2 seconds
+      setTimeout(() => {
+        window.location.href = "home.html";
+      }, 2000);
+    } catch (error) {
+      modalContent.innerHTML = `
+        <h4 style="color:red;">⚠️ Error deleting account</h4>
+        <p>${error.message}</p>
+        <button class="cancel-btn" id="closeErrorBtn">Close</button>
+      `;
+      document.getElementById("closeErrorBtn").addEventListener("click", () => {
+        modal.style.display = "none";
+      });
+    }
+  });
+});
+
+// ✅ Password toggle (same as before)
+document.querySelectorAll(".password-toggle").forEach((icon) => {
+  icon.addEventListener("click", () => {
+    const input = icon.previousElementSibling;
+    if (input && input.type === "password") {
+      input.type = "text";
+      icon.classList.remove("fa-eye-slash");
+      icon.classList.add("fa-eye");
+    } else {
+      input.type = "password";
+      icon.classList.remove("fa-eye");
+      icon.classList.add("fa-eye-slash");
+    }
+  });
+});
+
+// ✅ Sidebar toggle
 const toggleBtn = document.getElementById("toggleBtn");
 const sidebar = document.getElementById("sidebar");
 toggleBtn.addEventListener("click", () => {
   sidebar.classList.toggle("active");
 });
-
 </script>
 
 </body>
