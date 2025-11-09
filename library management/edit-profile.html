@@ -22,8 +22,9 @@
 
 <button class="toggle-btn" id="toggleBtn">☰</button>
 <div class="profile-form">
-  <h2>Edit Profile</h2>
+  <h2>✏️  Edit Profile</h2>
 
+  <div class="box-section">
   <div class="form-group">
     <label for="name">Full Name</label>
     <input type="text" id="name" placeholder="Enter your full name">
@@ -60,11 +61,12 @@
   <button id="saveBtn">Update Profile</button>
   <small id="successMessage" style="color:green;"></small>
 </div>
+</div>
 
 <script type="module">
 import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // Elements
 const nameInput = document.getElementById("name");
@@ -80,7 +82,7 @@ const phoneError = document.getElementById("phoneError");
 const genderError = document.getElementById("genderError");
 const successMessage = document.getElementById("successMessage");
 
-// --- Gender selection (only 1 selectable) ---
+// --- Gender selection ---
 genderCards.forEach(card => {
   card.addEventListener("click", () => {
     genderCards.forEach(c => c.classList.remove("selected"));
@@ -112,19 +114,33 @@ phoneInput.addEventListener("input", () => {
 });
 
 // --- Load user data ---
+// Step 1: Read from "users" collection (signup data)
 onAuthStateChanged(auth, async (user) => {
   if (!user) return window.location.href = "login.html";
 
-  const userRef = doc(db, "users", user.uid);
   try {
-    const userSnap = await getDoc(userRef);
-    if (userSnap.exists()) {
-      const data = userSnap.data();
-      nameInput.value = data.fullname || "";
-      emailInput.value = user.email || "";
-      phoneInput.value = data.phone || "";
-      aboutInput.value = data.about || "";
+    // Fetch user info from 'users' collection (created during signup)
+    const usersRef = doc(db, "users", user.uid);
+    const usersSnap = await getDoc(usersRef);
 
+    // Fetch edit info (if previously edited)
+    const editRef = doc(db, "editProfiles", user.uid);
+    const editSnap = await getDoc(editRef);
+
+    // Start with data from 'users'
+    if (usersSnap.exists()) {
+      const data = usersSnap.data();
+      nameInput.value = data.fullname || "";
+      emailInput.value = data.email || "";
+      phoneInput.value = data.phone || "";
+    }
+
+    // If edited profile exists, override the above values
+    if (editSnap.exists()) {
+      const data = editSnap.data();
+      nameInput.value = data.fullname || nameInput.value;
+      phoneInput.value = data.phone || phoneInput.value;
+      aboutInput.value = data.about || "";
       if (data.gender) {
         genderCards.forEach(c => {
           c.classList.remove("selected");
@@ -135,10 +151,14 @@ onAuthStateChanged(auth, async (user) => {
         });
       }
     }
-  } catch(err) { console.error("Error fetching user data:", err); }
+
+  } catch (err) {
+    console.error("Error fetching user data:", err);
+  }
 });
 
 // --- Save profile ---
+// Step 2: Save to "editProfiles" collection
 saveBtn.addEventListener("click", async () => {
   const user = auth.currentUser;
   if (!user) return;
@@ -156,29 +176,35 @@ saveBtn.addEventListener("click", async () => {
 
   if (!isNameValid || !isPhoneValid || !isGenderValid) return;
 
-  const userRef = doc(db, "users", user.uid);
+  const editRef = doc(db, "editProfiles", user.uid);
+
   try {
-    await updateDoc(userRef, {
+    // Use setDoc (creates or overwrites) so even new users can save
+    await setDoc(editRef, {
       fullname: nameVal,
       phone: phoneVal,
       about: aboutVal,
-      gender: genderVal
+      gender: genderVal,
+      updatedAt: new Date(),
+      email: user.email
     });
+
     successMessage.textContent = "✅ Profile updated successfully!";
     successMessage.style.color = "green";
-  } catch(err) {
+  } catch (err) {
     console.error("Error updating profile:", err);
     successMessage.textContent = "❌ Failed to update profile!";
     successMessage.style.color = "red";
   }
 });
+
 // Sidebar toggle
 const toggleBtn = document.getElementById("toggleBtn");
 const sidebar = document.getElementById("sidebar");
 const mainContent = document.getElementById("mainContent");
-toggleBtn.addEventListener("click", ()=>{
+toggleBtn.addEventListener("click", () => {
   sidebar.classList.toggle("active");
-  mainContent.classList.toggle("shift");
+  mainContent?.classList.toggle("shift");
 });
 </script>
 
