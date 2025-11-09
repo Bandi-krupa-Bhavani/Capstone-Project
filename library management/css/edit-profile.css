@@ -44,7 +44,7 @@ header .logo {
   flex-direction: column;
   gap: 25px; /* spacing between two boxes */
   align-items: center;
-  margin: 190px auto 40px;
+  margin: 160px auto 40px;
 }
 /* Each inner box has its own soft glass card */
 .box-section {
