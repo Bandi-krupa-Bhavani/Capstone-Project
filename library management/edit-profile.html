@@ -65,8 +65,8 @@
 
 <script type="module">
 import { auth, db } from "./firebase-config.js";
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // Elements
 const nameInput = document.getElementById("name");
@@ -82,7 +82,7 @@ const phoneError = document.getElementById("phoneError");
 const genderError = document.getElementById("genderError");
 const successMessage = document.getElementById("successMessage");
 
-// --- Gender selection ---
+// Gender selection
 genderCards.forEach(card => {
   card.addEventListener("click", () => {
     genderCards.forEach(c => c.classList.remove("selected"));
@@ -92,7 +92,7 @@ genderCards.forEach(card => {
   });
 });
 
-// --- Validation function ---
+// Validation
 function validateField(input, regex, errorElement, message) {
   if (input.value.trim() !== "" && !regex.test(input.value.trim())) {
     errorElement.textContent = message;
@@ -105,7 +105,6 @@ function validateField(input, regex, errorElement, message) {
   }
 }
 
-// --- Real-time validation ---
 nameInput.addEventListener("input", () => {
   validateField(nameInput, /^[A-Za-z\s]+$/, nameError, "Only letters allowed.");
 });
@@ -113,21 +112,17 @@ phoneInput.addEventListener("input", () => {
   validateField(phoneInput, /^\d{10}$/, phoneError, "Phone must be 10 digits.");
 });
 
-// --- Load user data ---
-// Step 1: Read from "users" collection (signup data)
+// Load user data
 onAuthStateChanged(auth, async (user) => {
-  if (!user) return window.location.href = "login.html";
+  if (!user) return (window.location.href = "login.html");
 
   try {
-    // Fetch user info from 'users' collection (created during signup)
     const usersRef = doc(db, "users", user.uid);
     const usersSnap = await getDoc(usersRef);
 
-    // Fetch edit info (if previously edited)
     const editRef = doc(db, "editProfiles", user.uid);
     const editSnap = await getDoc(editRef);
 
-    // Start with data from 'users'
     if (usersSnap.exists()) {
       const data = usersSnap.data();
       nameInput.value = data.fullname || "";
@@ -135,7 +130,6 @@ onAuthStateChanged(auth, async (user) => {
       phoneInput.value = data.phone || "";
     }
 
-    // If edited profile exists, override the above values
     if (editSnap.exists()) {
       const data = editSnap.data();
       nameInput.value = data.fullname || nameInput.value;
@@ -157,8 +151,7 @@ onAuthStateChanged(auth, async (user) => {
   }
 });
 
-// --- Save profile ---
-// Step 2: Save to "editProfiles" collection
+// Save profile
 saveBtn.addEventListener("click", async () => {
   const user = auth.currentUser;
   if (!user) return;
@@ -168,7 +161,6 @@ saveBtn.addEventListener("click", async () => {
   const aboutVal = aboutInput.value.trim();
   const genderVal = genderInput.value;
 
-  // Validate
   const isNameValid = validateField(nameInput, /^[A-Za-z\s]+$/, nameError, "Only letters allowed.");
   const isPhoneValid = validateField(phoneInput, /^\d{10}$/, phoneError, "Phone must be 10 digits.");
   const isGenderValid = genderVal !== "";
@@ -179,7 +171,6 @@ saveBtn.addEventListener("click", async () => {
   const editRef = doc(db, "editProfiles", user.uid);
 
   try {
-    // Use setDoc (creates or overwrites) so even new users can save
     await setDoc(editRef, {
       fullname: nameVal,
       phone: phoneVal,
@@ -188,6 +179,9 @@ saveBtn.addEventListener("click", async () => {
       updatedAt: new Date(),
       email: user.email
     });
+
+    // 🔥 Keep Firebase Auth displayName in sync
+    await updateProfile(user, { displayName: nameVal });
 
     successMessage.textContent = "✅ Profile updated successfully!";
     successMessage.style.color = "green";
@@ -201,10 +195,8 @@ saveBtn.addEventListener("click", async () => {
 // Sidebar toggle
 const toggleBtn = document.getElementById("toggleBtn");
 const sidebar = document.getElementById("sidebar");
-const mainContent = document.getElementById("mainContent");
 toggleBtn.addEventListener("click", () => {
   sidebar.classList.toggle("active");
-  mainContent?.classList.toggle("shift");
 });
 </script>
 

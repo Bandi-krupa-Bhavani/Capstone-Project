@@ -1,193 +1,187 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-<link rel="stylesheet" href="css/profile.css">
-<title>Profile Page</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <link rel="stylesheet" href="css/profile.css">
+  <title>Profile Page</title>
 </head>
 <body>
   <header>
     <div class="logo">
-        <i class="fas fa-book"></i> BookVerse
+      <i class="fas fa-book"></i> BookVerse
     </div>
-</header>
+  </header>
+
   <div class="sidebar" id="sidebar">
-  <a href="dashboard.html"><i class="fa-solid fa-house"></i> Dashboard</a>
-  <a href="profile.html"><i class="fa-solid fa-user"></i> Profile</a>
-  <a href="library.html"><i class="fa-solid fa-book-open"></i> My Library</a>
-  <a href="home.html"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
-</div>
+    <a href="dashboard.html"><i class="fa-solid fa-house"></i> Dashboard</a>
+    <a href="profile.html"><i class="fa-solid fa-user"></i> Profile</a>
+    <a href="library.html"><i class="fa-solid fa-book-open"></i> My Library</a>
+    <a href="home.html"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+  </div>
 
-<button class="toggle-btn" id="toggleBtn">☰</button>
+  <button class="toggle-btn" id="toggleBtn">☰</button>
 
-<div class="content" id="mainContent">
-  <div class="profile-photo-wrapper" id="profileWrapper">
-    <div id="profilePhotoContainer"><div class="avatar">U</div></div>
-    <div class="camera-toggle" id="cameraToggle"><i class="fa-solid fa-camera"></i></div>
-    <div class="photo-options" id="photoOptions">
-      <button id="updatePhotoBtn">Update Photo</button>
-      <button id="deletePhotoBtn">Delete Photo</button>
+  <div class="content" id="mainContent">
+    <div class="profile-photo-wrapper" id="profileWrapper">
+      <div id="profilePhotoContainer"><div class="avatar">U</div></div>
+      <div class="camera-toggle" id="cameraToggle"><i class="fa-solid fa-camera"></i></div>
+      <div class="photo-options" id="photoOptions">
+        <button id="updatePhotoBtn">Update Photo</button>
+        <button id="deletePhotoBtn">Delete Photo</button>
+      </div>
+    </div>
+
+    <h2 class="profile-name" id="profileName"></h2><br>
+    <div class="actions">
+      <a href="edit-profile.html"><button class="action-btn"><span>✏️</span> Edit Profile</button></a>
+      <a href="passw-sec.html"><button class="action-btn"><span>🔒</span> Password & Security</button></a>
+      <a href="help-support.html"><button class="action-btn"><span>❓</span> Help & Support</button></a>
+      <button class="action-btn" id="logoutBtn"><span>🚪</span> Logout</button>
     </div>
   </div>
 
-  <h2 class="profile-name" id="profileName"></h2><br>
-  <div class="actions">
-  <a href="edit-profile.html"><button class="action-btn"><span>✏️</span> Edit Profile</button></a>
-  <a href="passw-sec.html"><button class="action-btn"><span>🔒</span> Password & Security</button></a>
-  <a href="help-support.html"><button class="action-btn"><span>❓</span> Help & Support</button></a>
-  <button class="action-btn" id="logoutBtn"><span>🚪</span> Logout</button>
-</div>
-</div>
-<script type="module">
-import { auth, db, storage } from "./firebase-config.js";   // ✅ storage from config
-import { onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+  <script type="module">
+    import { auth, db, storage } from "./firebase-config.js";
+    import { onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { doc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
-const profileName = document.getElementById("profileName");
-const profilePhotoContainer = document.getElementById("profilePhotoContainer");
-const photoOptions = document.getElementById("photoOptions");
-const cameraToggle = document.getElementById("cameraToggle");
-const profileWrapper = document.getElementById("profileWrapper");
+    const profileName = document.getElementById("profileName");
+    const profilePhotoContainer = document.getElementById("profilePhotoContainer");
+    const photoOptions = document.getElementById("photoOptions");
+    const cameraToggle = document.getElementById("cameraToggle");
+    const profileWrapper = document.getElementById("profileWrapper");
 
-// Append camera toggle & options
-profileWrapper.appendChild(cameraToggle);
-profileWrapper.appendChild(photoOptions);
-
-// Toggle photo options
-cameraToggle.addEventListener("click", () => {
-  photoOptions.style.display = (photoOptions.style.display === "flex") ? "none" : "flex";
-});
-
-// Helper: display name & avatar
-function displayNameAvatar(fullname, photoURL=null) {
-  profileName.textContent = fullname;
-  if(photoURL){
-    profilePhotoContainer.innerHTML = `<img src="${photoURL}" class="profile-pic" alt="Profile Photo">`;
-  } else {
-    profilePhotoContainer.innerHTML = `<div class="avatar">${fullname.charAt(0).toUpperCase()}</div>`;
-  }
-}
-
-// Check sessionStorage first
-const storedName = sessionStorage.getItem("fullname");
-const storedLetter = sessionStorage.getItem("firstLetter");
-if(storedName && storedLetter){
-  displayNameAvatar(storedName);
-}
-
-// Auth listener
-onAuthStateChanged(auth, async (user) => {
-  if(!user){
-    sessionStorage.clear();
-    window.location.href = "login.html";
-    return;
-  }
-
-  try {
-    const currentUID = user.uid;
-    const storedUID = sessionStorage.getItem("uid");
-
-    let fullname;
-
-    // If stored UID matches current user, use cached name
-    if(storedUID === currentUID){
-      fullname = sessionStorage.getItem("fullname") || "User";
-    } else {
-      // Fetch from Firestore for new user
-      const userDocRef = doc(db,"users",currentUID);
-      const userDocSnap = await getDoc(userDocRef);
-      fullname = userDocSnap.exists() && userDocSnap.data().fullname ? userDocSnap.data().fullname : "User";
-
-      // Save to sessionStorage
-      sessionStorage.setItem("uid", currentUID);
-      sessionStorage.setItem("fullname", fullname);
-      sessionStorage.setItem("firstLetter", fullname.charAt(0).toUpperCase());
+    // --- Display helper ---
+    function displayNameAvatar(fullname = "User", photoURL = null) {
+      profileName.textContent = fullname || "User";
+      if (photoURL) {
+        profilePhotoContainer.innerHTML = `<img src="${photoURL}" class="profile-pic" alt="Profile Photo">`;
+      } else {
+        const letter = fullname && fullname.length ? fullname.charAt(0).toUpperCase() : "U";
+        profilePhotoContainer.innerHTML = `<div class="avatar">${letter}</div>`;
+      }
     }
 
-    displayNameAvatar(fullname, user.photoURL);
-
-  } catch(err){
-    console.error("Error fetching user data:", err);
-    profileName.textContent = "Error loading name";
-  }
-});
-
-
-// Upload photo
-document.getElementById("updatePhotoBtn").addEventListener("click", async () => {
-  const input = document.createElement("input");
-  input.type = "file";
-  input.accept = "image/*";
-
-  input.onchange = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const storageRef = ref(storage, `profilePhotos/${auth.currentUser.uid}`);
-
-    try {
-      // Upload file
-      await uploadBytes(storageRef, file);
-
-      // Get URL
-      const downloadURL = await getDownloadURL(storageRef);
-
-      // Update Firebase Auth profile
-      await updateProfile(auth.currentUser, { photoURL: downloadURL });
-
-      // Update UI
-      displayNameAvatar(sessionStorage.getItem("fullname"), downloadURL);
-
-      alert("Profile photo updated ✅");
-    } catch (err) {
-      console.error(err);
-      alert("Failed to upload photo ❌");
+    // --- Quick cached display ---
+    const cachedName = sessionStorage.getItem("fullname");
+    const cachedLetter = sessionStorage.getItem("firstLetter");
+    if (cachedName && cachedLetter) {
+      displayNameAvatar(cachedName, null);
     }
-  };
 
-  input.click();
-});
+    // --- Camera toggle ---
+    cameraToggle.addEventListener("click", () => {
+      photoOptions.style.display = (photoOptions.style.display === "flex") ? "none" : "flex";
+    });
 
+    // --- Auth listener ---
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        sessionStorage.clear();
+        window.location.href = "login.html";
+        return;
+      }
 
-// Delete photo
-document.getElementById("deletePhotoBtn").addEventListener("click", async () => {
-  const user = auth.currentUser;
-  if (!user || !user.photoURL) {
-    alert("No photo to delete ❌");
-    return;
-  }
+      const uid = user.uid;
+      const editRef = doc(db, "editProfiles", uid);
 
-  const storageRef = ref(storage, `profilePhotos/${user.uid}`);
-  try {
-    await deleteObject(storageRef).catch(() => {}); // delete file
-    await updateProfile(user, { photoURL: null }); // clear profile photo
-    displayNameAvatar(sessionStorage.getItem("fullname")); // fallback avatar
-    alert("Profile photo deleted ✅");
-  } catch (err) {
-    console.error(err);
-    alert("Failed to delete photo ❌");
-  }
-});
+      // Real-time listener for editProfiles changes
+      onSnapshot(editRef, async (editSnap) => {
+        let fullname = "User";
+        let photoURL = null;
 
+        if (editSnap.exists()) {
+          const data = editSnap.data();
+          if (data.fullname?.trim()) fullname = data.fullname.trim();
+          if (data.photoURL) photoURL = data.photoURL;
+        } else {
+          // Fall back to users collection
+          const userDocRef = doc(db, "users", uid);
+          const userSnap = await getDoc(userDocRef);
+          if (userSnap.exists()) {
+            const userData = userSnap.data();
+            if (userData.fullname?.trim()) fullname = userData.fullname.trim();
+          }
+        }
 
-// Logout
-document.getElementById("logoutBtn").addEventListener("click", async ()=>{
-  await auth.signOut();
-  sessionStorage.clear();
-  window.location.href="home.html";
-});
+        // Final fallback: Firebase Auth photo/name
+        if (!photoURL) photoURL = user.photoURL || null;
 
-// Sidebar toggle
-const toggleBtn = document.getElementById("toggleBtn");
-const sidebar = document.getElementById("sidebar");
-const mainContent = document.getElementById("mainContent");
-toggleBtn.addEventListener("click", ()=>{
-  sidebar.classList.toggle("active");
-  mainContent.classList.toggle("shift");
-});
-</script>
+        // Cache
+        const letter = fullname.charAt(0).toUpperCase() || "U";
+        sessionStorage.setItem("uid", uid);
+        sessionStorage.setItem("fullname", fullname);
+        sessionStorage.setItem("firstLetter", letter);
+
+        // Update UI
+        displayNameAvatar(fullname, photoURL);
+      });
+    });
+
+    // --- Upload photo ---
+    document.getElementById("updatePhotoBtn").addEventListener("click", async () => {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = "image/*";
+
+      input.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const storageRef = ref(storage, `profilePhotos/${auth.currentUser.uid}`);
+
+        try {
+          await uploadBytes(storageRef, file);
+          const downloadURL = await getDownloadURL(storageRef);
+          await updateProfile(auth.currentUser, { photoURL: downloadURL });
+          displayNameAvatar(sessionStorage.getItem("fullname") || "User", downloadURL);
+          alert("Profile photo updated ✅");
+        } catch (err) {
+          console.error(err);
+          alert("Failed to upload photo ❌");
+        }
+      };
+      input.click();
+    });
+
+    // --- Delete photo ---
+    document.getElementById("deletePhotoBtn").addEventListener("click", async () => {
+      const user = auth.currentUser;
+      if (!user || !user.photoURL) {
+        alert("No photo to delete ❌");
+        return;
+      }
+
+      const storageRef = ref(storage, `profilePhotos/${user.uid}`);
+      try {
+        await deleteObject(storageRef).catch(() => {});
+        await updateProfile(user, { photoURL: null });
+        displayNameAvatar(sessionStorage.getItem("fullname") || "User");
+        alert("Profile photo deleted ✅");
+      } catch (err) {
+        console.error(err);
+        alert("Failed to delete photo ❌");
+      }
+    });
+
+    // --- Logout ---
+    document.getElementById("logoutBtn").addEventListener("click", async () => {
+      await auth.signOut();
+      sessionStorage.clear();
+      window.location.href = "home.html";
+    });
+
+    // --- Sidebar toggle ---
+    const toggleBtn = document.getElementById("toggleBtn");
+    const sidebar = document.getElementById("sidebar");
+    const mainContent = document.getElementById("mainContent");
+    toggleBtn.addEventListener("click", () => {
+      sidebar.classList.toggle("active");
+      mainContent.classList.toggle("shift");
+    });
+  </script>
 </body>
-</html>  
+</html>
