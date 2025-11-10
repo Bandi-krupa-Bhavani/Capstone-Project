@@ -1,0 +1,194 @@
+body { 
+  font-family: Arial, sans-serif; 
+  background: #f9f9f9; 
+  height: 100vh;
+  display: flex;
+  justify-content: center; /* center horizontally */
+  align-items: center;     /* center vertically */
+  margin: 0;
+  background: 
+    linear-gradient(rgba(237, 202, 169, 0.7), rgba(237, 202, 169, 0.8)), 
+    url("assets/images/profile-page.jpg");
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed; /* keeps image fixed on scroll */
+  transition: margin-left 0.3s ease;
+}
+
+/* Header */
+header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background: rgba(62, 44, 32, 0.95);
+  color: #F5E6D3;
+  padding: 15px 50px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 10;
+}
+
+header .logo {
+  font-size: 22px;
+  font-weight: bold;
+  color: #F5E6D3;
+}
+
+/* Profile Form */
+.profile-form { 
+  width: 440px;
+  background: transparent; /* remove overall glass background */
+  display: flex;
+  flex-direction: column;
+  gap: 25px; /* spacing between two boxes */
+  align-items: center;
+  margin: 160px auto 40px;
+}
+/* Each inner box has its own soft glass card */
+.box-section {
+  width: 100%;
+  background: #ffffffef;
+  backdrop-filter: blur(18px);
+  border-radius: 16px;
+  padding: 25px 40px 30px 25px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 10px 5px 10px rgba(0, 0, 0, 0.15);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.box-section:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.25);
+}
+.profile-form h2 { 
+  text-align: center; 
+  margin-bottom: -10px; 
+  text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  color:#5d4037;
+}
+
+.form-group { margin-bottom: 15px; }
+
+label { 
+  display: block; 
+  margin-bottom: 5px; 
+  font-weight: 550; 
+  color:#5d4037;
+}
+
+input, textarea { 
+  width: 100%; 
+  padding: 10px; 
+  border-radius: 8px; 
+  border: 1px solid #ccc; 
+  font-size: 14px; 
+  box-sizing: border-box;
+}
+
+input[readonly] { 
+  background: #eee; 
+  color: #555; 
+}
+
+textarea { 
+  resize: vertical; 
+}
+
+button { 
+  background: #3e2c20; 
+  color: #fff; 
+  padding: 12px 20px; 
+  border: none; 
+  border-radius: 8px; 
+  cursor: pointer; 
+  font-size: 16px; 
+}
+
+button:hover { background: #5a3d2b; }
+
+small { 
+  display: block; 
+  margin-top: 4px; 
+  color: red; 
+  font-size: 13px; 
+}
+
+/* Sidebar */
+.sidebar { 
+  position: fixed; 
+  top: 60px; 
+  left: -250px; 
+  width: 250px; 
+  height: 100%; 
+  background: transparent; 
+  padding-top: 60px; 
+  transition: left 0.3s ease; 
+  color: #fff;
+}
+
+.sidebar.active { left: 0; }
+
+.sidebar a { 
+  display: block; 
+  padding: 15px 20px; 
+  color: rgba(62, 44, 32, 0.95); 
+  text-decoration: none; 
+  transition: background 0.3s;
+}
+
+.sidebar a:hover { background: rgba(255,255,255,0.2); }
+
+.toggle-btn { 
+  position: fixed; 
+  top: 70px; 
+  left: 15px; 
+  font-size: 25px; 
+  background: rgba(62, 44, 32, 0.95); 
+  color: white; 
+  border: none; 
+  padding: 8px 12px; 
+  border-radius: 6px; 
+  cursor: pointer; 
+  z-index: 1000;
+}
+
+/* Gender Selection */
+.gender-options {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.gender-card {
+  width: 80px;
+  height: 40px;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 14px;
+  line-height: 1.2;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  transition: all 0.2s;
+  background: #f9f9f9;
+}
+
+.gender-card:hover { 
+  border-color: #3e2c20; 
+  background: #fff; 
+}
+
+.gender-card.selected { 
+  border-color: #3e2c20; 
+  background: #fff; 
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1); 
+}
+
+input.error-input, textarea.error-input { 
+  border-color: red; 
+}

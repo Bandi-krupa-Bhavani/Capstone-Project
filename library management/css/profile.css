@@ -1,0 +1,86 @@
+  body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: 
+    linear-gradient(rgba(237, 202, 169, 0.7), rgba(237, 202, 169, 0.8)), 
+    url("assets/images/profile-page.jpg");
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed; /* keeps image fixed on scroll */
+  transition: margin-left 0.3s ease;
+}
+/* Header */
+header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background: rgba(62, 44, 32, 0.95);
+  color: #F5E6D3;
+  padding: 15px 50px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 10;
+}
+
+header .logo {
+  font-size: 22px;
+  font-weight: bold;
+  color: #F5E6D3;
+}
+
+
+  .sidebar { position: fixed; top:60px; left:-250px; width:250px; height:100%; background: transparent;
+; padding-top:60px; transition:left 0.3s ease; color:#fff;}
+  .sidebar.active { left:0;}
+  .sidebar a { display:block; padding:15px 20px; color:rgba(62, 44, 32, 0.95); text-decoration:none; transition:background 0.3s;}
+  .sidebar a:hover { background:rgba(255,255,255,0.2);}
+  .toggle-btn { position: fixed; top:70px; left:15px; font-size:25px; background:rgba(62, 44, 32, 0.95); color:white; border:none; padding:8px 12px; border-radius:6px; cursor:pointer; z-index:1000;}
+  .content { padding:140px 40px 40px; transition:margin-left 0.3s ease; text-align:center;}
+  .content.shift { margin-left:250px;}
+  .profile-name { font-size:22px; margin:8px 0 4px; color:rgba(62, 44, 32, 0.95);}
+  .actions {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* 2 buttons per row */
+  gap: 20px; /* spacing between buttons */
+  max-width: 600px; /* wider container */
+  margin: auto;
+}
+.actions a {
+  text-decoration: none;   /* remove underline */
+  display: inline-block;   /* make the <a> wrap the button properly */
+}
+
+.action-btn {
+  background: #fff;
+  border: none;
+  padding: 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  font-size: 15px;
+  color: #444;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  transition: transform 0.2s, background 0.2s;
+  width: 100%; /* make both buttons in a row equal width */
+}
+
+.action-btn:hover {
+  background: rgb(235, 233, 233);
+  transform: translateY(-2px);
+}
+
+.action-btn span {
+  font-size: 18px;
+}
+
+  .profile-photo-wrapper { position:relative; display:inline-block;}
+  .avatar,.profile-pic { width:120px; height:120px; border-radius:50%; object-fit:cover; border:4px solid rgba(62, 44, 32, 0.95); display:flex; align-items:center; justify-content:center; font-size:40px; font-weight:bold; color:rgba(197,84,84,0.822); background:white;}
+  .camera-toggle { position:absolute; bottom:0; right:0; background:rgb(150,149,149);border:4px solid rgba(62, 44, 32, 0.3); color:white; border-radius:50%; padding:8px; cursor:pointer; font-size:18px; box-shadow:0 2px 6px rgba(0,0,0,0.2);}
+  .photo-options { position:absolute; top:130px; left:50%; transform:translateX(-50%); background:white; border:1px solid #ccc; border-radius:8px; display:none; flex-direction:column; min-width:140px; box-shadow:0 4px 10px rgba(0,0,0,0.1); z-index:10;}
+  .photo-options button { padding:10px; border:none; background:none; cursor:pointer; text-align:left; font-size:14px;}
+  .photo-options button:hover { background:#f0f0f0;}
