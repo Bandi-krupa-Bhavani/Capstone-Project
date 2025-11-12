@@ -1,146 +1,73 @@
-/* Reset */
+/* ===============================================
+   ✅ RESET & GLOBAL STYLES
+================================================= */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
-.password-toggle {
-  position: absolute;
-  top: 50%;
-  right: 12px;
-  transform: translateY(-15%);
-  cursor: pointer;
-  font-size: 18px;
-  color: #555;
-  line-height: 1;
-}
 
-.password-toggle:hover {
-  color: #000;
-}
-
-/* Ensure consistent input box height and spacing */
-.input-group input[type="password"],
-.input-group input[type="text"] {
-  padding-right: 40px;
-  line-height: 1.4; /* keeps height consistent */
-  box-sizing: border-box;
-  height: 40px;     /* fixed height for consistent vertical alignment */
-}
-
-  .error {
-      color: red;
-      font-size: 0.85rem;
-      margin-top: 3px;
-    }
-    input.error-input {
-      border-color: red;
-    }
-
-    /* Success message styling (green text only) */
-    .success-message {
-      margin-top: 20px;
-      font-size: 1rem;
-      font-weight: bold;
-      color: green;
-      opacity: 0;
-      transform: translateY(10px);
-      transition: opacity 0.6s ease, transform 0.6s ease;
-      display: none;
-    }
-    .success-message.show {
-      display: block;
-      opacity: 1;
-      transform: translateY(0);
-    }
-    .success-message.fade-out {
-      opacity: 0;
-      transform: translateY(-10px);
-    }
-
-    /* Disabled inputs after success */
-    input:disabled {
-      background-color: #f0f0f0;
-      cursor: not-allowed;
-    }
-    button:disabled {
-      cursor: not-allowed;
-    }
-
-    /* Spinner inside button */
-    .spinner {
-      border: 3px solid #f3f3f3;
-      border-top: 3px solid #fff;
-      border-right: 3px solid #fff;
-      border-radius: 50%;
-      width: 16px;
-      height: 16px;
-      animation: spin 1s linear infinite;
-      display: inline-block;
-      vertical-align: middle;
-      margin-right: 8px;
-    }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-/* Body */
+/* ===============================================
+   ✅ BODY
+================================================= */
 body {
   font-family: Arial, sans-serif;
   height: 100vh;
   display: flex;
-  justify-content: center; /* center horizontally */
-  align-items: center;     /* center vertically */
-  overflow-y: hidden;      /* remove vertical scroll only */
+  justify-content: center;
+  align-items: center;
+  overflow-x: hidden;
   background: rgba(237, 202, 169, 0.8);
-  transition: all 0.3s ease-in-out; /* smooth transitions */
-}
-
-/* Main container split screen */
-.login-container {
-  display: flex;
-  width: 90%;       /* horizontal margin by reducing width */
-  max-width: 1200px;
-  height: 100vh;
-  border-radius: 15px;
-  overflow: hidden; /* no scroll inside container */
-  box-shadow: 0 8px 25px rgba(0,0,0,0.2);
   transition: all 0.3s ease-in-out;
 }
 
-/* Left side image */
+/* ===============================================
+   ✅ MAIN CONTAINER
+================================================= */
+.login-container {
+  display: flex;
+  width: 90%;
+  max-width: 1200px;
+  height: 95vh;
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+   background: #fff; 
+  transition: all 0.3s ease-in-out;
+}
+
+/* ===============================================
+   ✅ LEFT IMAGE SIDE
+================================================= */
 .login-image {
   position: relative;
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 100%;
-  padding: 20px;
-  transition: all 0.3s ease-in-out;
+  overflow: hidden; 
+  background: #fdf8f6;
 }
 
 .login-image img {
   width: 100%;
-  height: 100%;
+  height: 110%;
   object-fit: cover;
-  border-radius: 12px;
   animation: float 4s infinite ease-in-out;
   transition: all 0.3s ease-in-out;
 }
 
-/* Floating animation */
 @keyframes float {
-  0%, 100% { transform: translateY(0px); }
+  0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-15px); }
 }
 
-/* Quote overlay */
+/* Quote text overlay */
 .login-quote {
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%);
   background: rgba(255, 255, 255, 0.85);
   padding: 15px 20px;
   border-radius: 10px;
@@ -153,24 +80,24 @@ body {
   transition: all 0.3s ease-in-out;
 }
 
-/* Right side login form */
+/* ===============================================
+   ✅ RIGHT FORM SIDE
+================================================= */
 .login-form {
   flex: 1;
   background: #fff;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 50px 40px; /* left-right padding */
-  height: 100%;
-  overflow: hidden;   /* prevent scroll inside form */
-  border-radius: 0 15px 15px 0;
+  padding: 60px 40px 40px;
   transition: all 0.3s ease-in-out;
 }
 
 .login-form h2 {
   font-size: 2rem;
   color: #6d4c41;
-  margin-bottom: 10px;
+  margin-bottom: 5px;
+  margin-top:-10px;
 }
 
 .login-form p {
@@ -178,17 +105,22 @@ body {
   margin-bottom: 20px;
 }
 
-/* Input styles */
+/* ===============================================
+   ✅ INPUT FIELDS & TOGGLE
+================================================= */
 .input-group {
   margin-bottom: 15px;
+  margin-top:-5px;
   position: relative;
 }
+
 .input-group label {
   display: block;
   font-size: 0.9rem;
   margin-bottom: 5px;
   color: #5d4037;
 }
+
 .input-group input {
   width: 100%;
   padding: 10px;
@@ -196,8 +128,92 @@ body {
   border-radius: 8px;
   outline: none;
   transition: all 0.3s ease-in-out;
+  height: 40px;
+  padding-right: 40px; /* space for eye icon */
 }
-/* Buttons */
+
+.input-group input:focus {
+  border-color: #7b5e54;
+}
+
+/* Password toggle (eye icon) */
+.password-toggle {
+  position: absolute;
+  top: 60%;
+  right: 12px;
+  transform: translateY(-50%);
+  cursor: pointer;
+  font-size: 18px;
+  color: #555;
+  line-height: 1;
+}
+.password-toggle:hover {
+  color: #000;
+}
+
+/* ===============================================
+   ✅ ERROR & SUCCESS STYLES
+================================================= */
+.error {
+  color: red;
+  font-size: 0.85rem;
+  margin-top: 3px;
+}
+input.error-input {
+  border-color: red;
+}
+
+.success-message {
+  margin-top: 10px;
+  margin-bottom:5px;
+  font-size: 1rem;
+  font-weight: bold;
+  color: green;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+  display: none;
+}
+.success-message.show {
+  display: block;
+  opacity: 1;
+  transform: translateY(0);
+}
+.success-message.fade-out {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+/* Disabled states */
+input:disabled {
+  background-color: #f0f0f0;
+  cursor: not-allowed;
+}
+button:disabled {
+  cursor: not-allowed;
+}
+
+/* Spinner animation inside button */
+.spinner {
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #fff;
+  border-right: 3px solid #fff;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  animation: spin 1s linear infinite;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 8px;
+}
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* ===============================================
+   ✅ BUTTONS
+================================================= */
 .btn {
   width: 100%;
   padding: 12px;
@@ -207,7 +223,8 @@ body {
   border-radius: 8px;
   cursor: pointer;
   font-size: 1rem;
-  margin-top: 10px;
+  margin-top: -5px;
+  margin-bottom:5px;
   transition: all 0.3s ease-in-out;
 }
 .btn:hover {
@@ -240,12 +257,12 @@ body {
   height: 20px;
 }
 
-/* Sign up link */
+/* Sign-up link */
 .signup-link {
-  margin-top: 20px;
   text-align: center;
   color: #5d4037;
 }
+
 .signup-link a {
   color: #8d6e63;
   text-decoration: none;
@@ -255,24 +272,97 @@ body {
   text-decoration: underline;
 }
 
-/* Responsive */
+/* ===============================================
+   ✅ RESPONSIVENESS
+================================================= */
+
+/* Large tablets (<= 992px) */
+@media (max-width: 992px) {
+  .login-container {
+    width: 95%;
+    height: auto;
+    flex-direction: row;
+  }
+  .login-form {
+    padding: 40px 30px;
+  }
+  .login-form h2 {
+    font-size: 1.8rem;
+  }
+  .login-quote {
+    font-size: 1rem;
+  }
+}
+
+/* Tablets & small laptops (<= 768px) */
 @media (max-width: 768px) {
+  body {
+    height: auto;
+    align-items: flex-start;
+    overflow-y: auto;
+  }
   .login-container {
     flex-direction: column;
     width: 95%;
     height: auto;
+    margin: 30px 0;
   }
-  .login-image, .login-form {
-    flex: unset;
+  .login-image,
+  .login-form {
     width: 100%;
-    border-radius: 15px 15px 0 0;
+    flex: unset;
+    border-radius: 0;
+  }
+  .login-image {
+    height: 250px;
   }
   .login-quote {
-    font-size: 1rem;
-    padding: 12px 15px;
+    font-size: 0.95rem;
+    padding: 10px 15px;
   }
   .login-form {
-    border-radius: 0 0 15px 15px;
     padding: 30px 20px;
+  }
+  .login-form h2 {
+    font-size: 1.6rem;
+  }
+  .login-form p {
+    font-size: 0.9rem;
+  }
+  .btn,
+  .google-btn {
+    font-size: 0.95rem;
+    padding: 10px;
+  }
+}
+
+/* Small phones (<= 480px) */
+@media (max-width: 480px) {
+  .login-form {
+    padding: 25px 15px;
+  }
+  .login-form h2 {
+    font-size: 1.4rem;
+  }
+  .login-form p {
+    font-size: 0.85rem;
+  }
+  .login-quote {
+    font-size: 0.85rem;
+    padding: 8px 10px;
+  }
+  .btn,
+  .google-btn {
+    font-size: 0.9rem;
+  }
+  .input-group input {
+    padding: 9px;
+  }
+  .password-toggle {
+    right: 10px;
+    font-size: 16px;
+  }
+  .or-divider {
+    margin: 10px 0;
   }
 }

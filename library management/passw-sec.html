@@ -21,6 +21,7 @@
 </div>
 
 <button class="toggle-btn" id="toggleBtn">☰</button>
+<div class="main-content" id="mainContent">
 <div class="security-form">
   <h2>🔒 Password & Security</h2>
 
@@ -60,7 +61,7 @@
     <button class="delete-btn" id="deleteAccountBtn">Delete Account</button>
   </div>
 </div>
-
+</div>
 <!-- Delete Confirmation Modal -->
 <div class="modal" id="confirmModal">
   <div class="modal-content">
@@ -257,11 +258,12 @@ document.querySelectorAll(".password-toggle").forEach((icon) => {
 });
 
 // ✅ Sidebar toggle
-document.getElementById("toggleBtn").addEventListener("click", () => {
-  document.getElementById("sidebar").classList.toggle("active");
+const mainContent = document.getElementById("mainContent");
+
+toggleBtn.addEventListener("click", () => {
+  sidebar.classList.toggle("active");
+  mainContent.classList.toggle("shifted");
 });
 </script>
-
-
 </body>
 </html>

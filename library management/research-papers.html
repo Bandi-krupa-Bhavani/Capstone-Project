@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Civil Engineering – BOOKVERSE</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+  :root{
+    --bg: #f4efe6;
+    --ink: #1f2937;
+    --title: #7b3f00;
+    --card: #fde8c9;
+    --card-hover: #fbd19a;
+    --accent: #c17c4a;
+    --chip: #fff1d6;
+  }
+
+  body{
+    margin:0; font-family: Inter, sans-serif;
+    background:
+      linear-gradient(to bottom, rgba(240, 207, 177, 0.7), rgba(239, 207, 177, 0.8)),
+      url("css/assets/images/dashboard-image.avif") center/cover fixed no-repeat;
+    min-height:100vh; color:var(--ink);
+  }
+
+  .wrap{ max-width:1200px; margin:0 auto; padding:20px; }
+
+  .back{
+    display:inline-flex; gap:.5rem; align-items:center; text-decoration:none;
+    background:var(--title); color:#f0e0d1; padding:.55rem .9rem; border-radius:10px;
+  }
+
+  h1{
+    margin:.6rem 0 .6rem;
+    font-family:"Playfair Display",serif;
+    color:var(--title);
+    border-bottom:3px solid var(--accent);
+    display:inline-block;
+    padding-bottom:.3rem;
+  }
+
+  .crumbs{ margin-top:6px; font-weight:600; color:#5a3825; }
+  .crumbs a{ color:#b7791f; text-decoration:none; }
+
+  /* Favourites Bar */
+  .favbar{
+    margin:16px 0 10px; padding:12px;
+    background:#fff7ed; border:1px dashed #e6c08d;
+    border-radius:12px; font-size:1rem;
+  }
+  .favbar strong{ color:#7b3f00; }
+  .fav-list{ margin-top:6px; display:flex; gap:.5rem; flex-wrap:wrap }
+  .fav-chip{
+    background:#fde68a; border:1px solid #f59e0b;
+    border-radius:9999px; padding:.28rem .6rem; font-weight:600;
+  }
+
+  /* Books Grid */
+  .grid{ display:grid; gap:18px; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); }
+
+  /* Card */
+  .card{
+    background:var(--card);
+    border-radius:16px;
+    box-shadow:0 4px 12px rgba(0,0,0,.12);
+    padding:18px;
+    display:flex; flex-direction:column; align-items:center;
+    transition:transform .2s ease, box-shadow .2s ease, background .2s ease;
+  }
+  .card:hover{
+    transform:translateY(-4px);
+    box-shadow:0 10px 24px rgba(0,0,0,.16);
+    background:var(--card-hover);
+  }
+
+  /* Circular cover */
+  .thumb {
+  width: 190px;
+  height: 120px;
+  object-fit: contain;       /* instead of 'cover' */
+  object-position: center;   /* keep center visible */
+  border-radius: 50%;
+  box-shadow: 0 4px 10px rgba(0,0,0,.22);
+  background: #fff8ec;
+  margin-bottom: 12px;
+  padding: 10px;             /* add breathing space around image */
+  background-color: white;   /* optional for cleaner circle background */
+}
+
+  .title{ font-weight:800; text-align:center; font-size:1.1rem; }
+  .author{ font-size:.95rem; color:#6b7280; text-align:center; margin-top:3px; }
+
+  .meta{
+    margin-top:6px;
+    font-size:.9rem; color:#6b7280;
+    display:flex; justify-content:center; gap:.6rem;
+  }
+
+  .actions{
+    margin-top:12px;
+    display:flex; flex-wrap:wrap;
+    gap:8px; justify-content:center;
+  }
+
+  .btn{
+    display:inline-flex; align-items:center; gap:6px;
+    padding:.55rem .9rem; border:none;
+    border-radius:12px; cursor:pointer;
+    text-decoration:none; font-weight:700;
+    background:linear-gradient(to right,#d4a373,#c17c4a); color:#fff;
+  }
+  .btn.secondary{
+    background:#fff; color:#111827; border:1px solid #e5e7eb;
+  }
+  .btn.ghost{
+    background:var(--chip); color:#7b3f00; border:1px dashed #d8a157;
+  }
+  .authors {
+  text-align: center;
+  margin-top: 6px;
+}
+
+.author {
+  font-size: 0.9rem;
+  color: #6b7280;
+  line-height: 1.4;
+}
+.authors i {
+  color: #7b3f00;
+  margin-bottom: 4px;
+}
+</style>
+</head>
+
+<body>
+<div class="wrap">
+
+  <a class="back" href="dashboard.html"><i class="fa-solid fa-arrow-left"></i></a>
+  <div class="crumbs"><a href="dashboard.html"></a></div>
+  <h1>Research Papers</h1>
+
+  <div class="grid" id="grid"></div>
+
+</div>
+
+<script>
+const BOOKS = [
+  {
+    id: "cv-hci",
+title: "Human Computer Interaction",
+authors: [
+  "Linda Hirsch",
+  "Siiri Paananen",
+  "Denise Lengyel",
+  "Jonna Häkkilä",
+  "Georgios Toubekis",
+  "Reem Talhouk",
+  "Luke Hespanhol"
+],
+cover: "css/assets/covers/hci.png",
+href: "css/domains/human computer interaction.pdf",
+type: "pdf",
+year: "2024"
+
+  },
+  {id: "cv-fake",
+title: "Fake news on Social Media: the Impact on Society",
+authors: [
+"Femi Olan",
+"Uchitha Jayawickrama",
+"Emmanuel Ogiemwonyi Arakpogun",
+"Jana Suklan",
+"Shaofeng Liu"
+],
+cover: "css/assets/covers/fake.png",
+href: "css/domains/fake news on social media.pdf",
+type: "pdf",
+year: "2022"
+
+  },
+  {
+    id: "cv-open world",
+title: "Open‑world Machine Learning",
+authors: [
+  "Jitendra Parmar",
+  "Satyendra Singh Chouhan",
+  "Vaskar Raychoudhury",
+  "Santosh Singh Rathore"
+],
+cover: "css/assets/covers/open world.png",
+href: "css/domains/open world machine learning.pdf",
+type: "pdf",
+year: "2021"
+
+  }
+];
+
+const FKEY = "bookverse_favs";
+const favs = new Set(JSON.parse(localStorage.getItem(FKEY) || "[]"));
+
+function saveFavs(){ localStorage.setItem(FKEY, JSON.stringify([...favs])); renderFavBar(); }
+function toggleFav(id){
+  if(favs.has(id)) favs.delete(id); else favs.add(id);
+  saveFavs();
+  const btn = document.querySelector(`[data-fav="${id}"]`);
+  if(btn) btn.textContent = favs.has(id) ? "Remove Fav" : "Add to Fav";
+}
+function renderFavBar(){
+  const box = document.getElementById("favList");
+  if(!favs.size){ box.textContent = "None yet. Add some ⭐"; return; }
+  box.innerHTML = [...favs].map(id=>{
+    const b = BOOKS.find(x=>x.id===id);
+    return `<span class="fav-chip">${b ? b.title : id}</span>`;
+  }).join("");
+}
+const icon = t => t==="pdf" ? "fa-file-pdf" : "fa-file-lines";
+
+function render(){
+  const grid = document.getElementById("grid");
+  grid.innerHTML = BOOKS.map(b => `
+    <article class="card">
+      <img class="thumb" src="${b.cover}">
+      <div class="title">${b.title}</div>
+      <div class="authors">
+  <i class="fa-solid fa-user"></i>
+  ${b.authors.map(a => `<div class="author">${a}</div>`).join("")}
+</div>
+      <div class="meta"><i class="fa-solid ${icon(b.type)}"></i> PDF • <i class="fa-regular fa-calendar"></i> ${b.year}</div>
+      <div class="actions">
+        <a class="btn" href="${b.href}" target="_blank"><i class="fa-solid fa-book-open"></i> Read</a>
+        <a class="btn secondary" href="${b.href}" download><i class="fa-solid fa-download"></i> Download</a>
+        <button class="btn ghost" data-fav="${b.id}" onclick="toggleFav('${b.id}')">${favs.has(b.id) ? "Remove Fav":"Add to Fav"}</button>
+      </div>
+    </article>
+  `).join("");
+}
+
+render();
+renderFavBar();
+</script>
+
+</body>
+</html>

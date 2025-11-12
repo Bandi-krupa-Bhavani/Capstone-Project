@@ -1,17 +1,20 @@
 body { 
   font-family: Arial, sans-serif; 
-  background: #f9f9f9; 
   height: 100vh;
-  display: flex;
-  justify-content: center; /* center horizontally */
-  align-items: center;     /* center vertically */
   margin: 0;
   background: 
     linear-gradient(rgba(237, 202, 169, 0.7), rgba(237, 202, 169, 0.8)), 
     url("assets/images/profile-page.jpg");
   background-size: cover;
   background-position: center;
-  background-attachment: fixed; /* keeps image fixed on scroll */
+  background-attachment: fixed;
+  display: block;
+  transition: margin-left 0.3s ease;
+}
+
+/* When sidebar opens, shift main content a bit */
+body.sidebar-active .profile-form {
+  margin-right: 260px; /* shifts content right on larger screens */
   transition: margin-left 0.3s ease;
 }
 
@@ -39,14 +42,15 @@ header .logo {
 /* Profile Form */
 .profile-form { 
   width: 440px;
-  background: transparent; /* remove overall glass background */
+  background: transparent;
   display: flex;
   flex-direction: column;
-  gap: 25px; /* spacing between two boxes */
+  gap: 25px;
   align-items: center;
-  margin: 160px auto 40px;
+  margin: 80px auto 40px;
+  transition: margin 0.3s ease;
 }
-/* Each inner box has its own soft glass card */
+
 .box-section {
   width: 100%;
   background: #ffffffef;
@@ -62,9 +66,11 @@ header .logo {
   transform: translateY(-3px);
   box-shadow: 0 6px 25px rgba(0, 0, 0, 0.25);
 }
+
 .profile-form h2 { 
   text-align: center; 
-  margin-bottom: -10px; 
+  margin-top: -10px;
+  margin-bottom: -5px; 
   text-shadow: 0 1px 2px rgba(0,0,0,0.2);
   color:#5d4037;
 }
@@ -92,9 +98,7 @@ input[readonly] {
   color: #555; 
 }
 
-textarea { 
-  resize: vertical; 
-}
+textarea { resize: vertical; }
 
 button { 
   background: #3e2c20; 
@@ -191,4 +195,80 @@ small {
 
 input.error-input, textarea.error-input { 
   border-color: red; 
+}
+
+/* 🌐 RESPONSIVE DESIGN 🌐 */
+@media (max-width: 768px) {
+  header {
+    padding: 12px 25px;
+    font-size: 18px;
+  }
+
+  .toggle-btn {
+    top: 65px;
+    font-size: 22px;
+  }
+
+  .profile-form {
+    width: 90%;
+    margin: 120px auto;
+    gap: 20px;
+  }
+
+  .box-section {
+    padding: 20px;
+  }
+
+  .gender-options {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .gender-card {
+    width: 90px;
+    height: 45px;
+  }
+}
+
+@media (max-width: 480px) {
+  .profile-form h2 {
+    font-size: 20px;
+  }
+
+  input, textarea, button {
+    font-size: 14px;
+  }
+
+  .toggle-btn {
+    top: 60px;
+    font-size: 20px;
+    padding: 6px 10px;
+  }
+
+  .gender-card {
+    width: 70px;
+    height: 38px;
+    font-size: 13px;
+  }
+
+  .box-section {
+    padding: 15px;
+  }
+
+  .sidebar {
+    width: 200px;
+  }
+}
+
+/* Sidebar open adjustment for medium screens */
+@media (min-width: 769px) and (max-width: 1200px) {
+  body.sidebar-active .profile-form {
+    margin-left: 220px; /* moves content right when sidebar opens */
+    transition: margin-left 0.3s ease;
+  }
+}
+@media (max-width: 768px) {
+  body.sidebar-active .profile-form {
+    margin-left: 270px; /* sidebar overlays on small screens */
+  }
 }
