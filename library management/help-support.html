@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Help & Support - BookVerse</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="css/help-support.css">
+</head>
+<body>
+<header>
+    <div class="header-left">
+      <div class="logo"><i class="fa-solid fa-book"></i><span style="margin-left:6px;">BookVerse</span></div>
+      <div id="welcomeName">Welcome</div>
+    </div>
+
+    <div class="header-right">
+      <div id="dateTime" aria-live="polite" title="Current date and time">
+        <span id="dtText">—</span>
+        <small>IST</small>
+      </div>
+    </div>
+  </header>
+
+<!-- Sidebar -->
+<div class="sidebar" id="sidebar">
+  <a href="dashboard.html"><i class="fa-solid fa-house"></i> Dashboard</a>
+  <a href="library.html"><i class="fa-solid fa-book-open"></i> My Library</a>
+  <a href="profile.html"><i class="fa-solid fa-user"></i> Profile</a>
+  <a href="home.html"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+</div>
+
+<button class="toggle-btn" id="toggleBtn">☰</button>
+
+<!-- Main Container -->
+<div class="help-container">
+  <h2>💬 Help & Support</h2>
+  <p class="intro">Need assistance? We’re here to help you resolve your issues quickly.</p>
+
+  <!-- FAQs Section -->
+  <section class="faq-section">
+    <h3><i class="fa-solid fa-circle-question"></i> Frequently Asked Questions</h3>
+    
+    <details>
+      <summary>How can I reset my password?</summary>
+      <p>Go to <strong>Password & Security</strong> in your profile settings, enter your current password, and choose a new one.</p>
+    </details>
+
+    <details>
+      <summary>How do I delete my account?</summary>
+      <p>Navigate to <strong>Password & Security</strong>, then under <em>Account Management</em> select <strong>Delete Account</strong>.</p>
+    </details>
+
+    <details>
+  <summary>How do I add a book to Continue Reading?</summary>
+  <p>Open a book from the Dashboard or Library and click "Resume" (or the add-to-continue action). The book is saved locally and will sync to your account when you sign in.</p>
+</details>
+
+    <details>
+      <summary>Why are my favourites not syncing across devices?</summary>
+      <p>Favourites sync requires you to be signed in. If you are signed in and still see a mismatch, check your network connection and ensure the app has permission to use storage. You can also try signing out and back in to force a sync or check the browser console for errors.</p>
+    </details>
+
+    <details>
+      <summary>How do I add or remove a book from My Favourites?</summary>
+      <p>Click the heart icon button on any book card in the Dashboard to add it. To remove, open <em>My Favourites</em> and use the "Remove" button on the card. If you're signed in, changes sync to your account; otherwise they are stored locally in your browser.</p>
+    </details>
+
+  <!-- Contact Form -->
+  <section class="contact-section">
+    <h3><i class="fa-solid fa-envelope"></i> Contact Support</h3>
+    <p>Have a question that’s not listed? Send us a message below.</p>
+
+    <form id="supportForm">
+      <input type="text" id="name" placeholder="Your Name" required>
+      <input type="email" id="email" placeholder="Your Email" required>
+      <select id="category" required>
+        <option value="">Select a category</option>
+        <option>Login Issue</option>
+        <option>Account Issue</option>
+        <option>Book Request</option>
+        <option>Other</option>
+      </select>
+      <textarea id="message" placeholder="Describe your issue..." rows="5" required></textarea>
+      <button type="submit">Submit</button>
+      <p id="formMsg"></p>
+    </form>
+  </section>
+
+  <!-- Contact Info -->
+  <section class="contact-info">
+    <h3><i class="fa-solid fa-headset"></i> Contact Information</h3>
+    <ul>
+      <li><i class="fa-solid fa-envelope"></i> support@bookverse.com</li>
+      <li><i class="fa-solid fa-phone"></i> +91 98765 43210</li>
+    </ul>
+  </section>
+</div>
+
+<!-- ✅ FIREBASE SCRIPT -->
+<script type="module">
+  import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { doc, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+import { db, auth } from "./firebase-config.js";
+import { 
+  collection, 
+  addDoc, 
+  serverTimestamp 
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+// Sidebar toggle
+const toggleBtn = document.getElementById("toggleBtn");
+const sidebar = document.getElementById("sidebar");
+toggleBtn.addEventListener("click", () => {
+  sidebar.classList.toggle("active");
+});
+
+// Form submission
+const supportForm = document.getElementById("supportForm");
+const formMsg = document.getElementById("formMsg");
+
+supportForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const name = document.getElementById("name").value.trim();
+  const email = document.getElementById("email").value.trim();
+  const category = document.getElementById("category").value;
+  const message = document.getElementById("message").value.trim();
+
+  if (!name || !email || !category || !message) {
+    formMsg.innerText = "⚠️ Please fill out all fields.";
+    formMsg.style.color = "red";
+    return;
+  }
+
+  try {
+    const user = auth.currentUser;
+    const payload = {
+      name,
+      email,
+      category,
+      message,
+      userId: user ? user.uid : null,
+      userEmail: user ? user.email : email,
+      createdAt: serverTimestamp()
+    };
+
+    if (user && user.uid) {
+      // signed-in: save as subcollection under users/{uid}/supportRequests
+      await addDoc(collection(db, "users", user.uid, "supportRequests",), payload);
+      console.log("Support request saved to users/%s/supportRequests", user.uid);
+    } else {
+      // not signed-in: save to root 'supportRequests' (anonymous)
+      await addDoc(collection(db, "supportRequests"), payload);
+      console.log("Support request saved to root supportRequests (anonymous)");
+    }
+
+    formMsg.innerText = "✅ Your message has been sent successfully!";
+    formMsg.style.color = "green";
+    supportForm.reset();
+
+    setTimeout(() => {
+      formMsg.innerText = "";
+    }, 4000);
+
+  } catch (error) {
+    console.error("Error submitting support request:", error);
+    formMsg.innerText = "❌ Error sending message. Please try again.";
+    formMsg.style.color = "red";
+  }
+});
+
+const welcomeNameEl = document.getElementById('welcomeName'); // <div id="welcomeName">
+  const dtText = document.getElementById('dtText'); 
+   // --- Clock: write only into the dtText span so the small "IST" remains ---
+  function formatKolkata(dt) {
+    try {
+      // human-friendly medium date + short time (Asia/Kolkata)
+      return new Intl.DateTimeFormat('en-IN', {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+        timeZone: 'Asia/Kolkata'
+      }).format(dt);
+    } catch (e) {
+      return dt.toLocaleString();
+    }
+  }
+  function startClock() {
+    function tick() {
+      if (dtText) dtText.textContent = formatKolkata(new Date());
+    }
+    tick();
+    setInterval(tick, 1000);
+  }
+  startClock();
+
+  // --- Welcome name from Firestore (subcollection) with session fallback ---
+  onAuthStateChanged(auth, async (user) => {
+    // default fallback from sessionStorage (if any)
+    const cached = sessionStorage.getItem('fullname') || null;
+    if (!user) {
+      welcomeNameEl.textContent = cached ? `Welcome! ${cached}` : 'Welcome';
+      return;
+    }
+
+    // optimistic display
+    let resolvedName = user.displayName || cached || 'Welcome';
+    welcomeNameEl.textContent = `Welcome! ${resolvedName}`;
+
+    // subscribe to subcollection doc: users/{uid}/editProfiles/profile
+    try {
+      const editRef = doc(db, 'users', user.uid, 'editProfiles', 'profile');
+      onSnapshot(editRef, snap => {
+        if (snap.exists() && snap.data().fullname) {
+          resolvedName = snap.data().fullname;
+        }
+        welcomeNameEl.textContent = `Welcome! ${resolvedName}`;
+        // cache small
+        sessionStorage.setItem('fullname', resolvedName);
+        sessionStorage.setItem('fullnameUpdatedAt', Date.now());
+      }, async (err) => {
+        console.warn('profile snapshot err', err);
+        // fallback to a single get if snapshot fails
+        try {
+          const fallback = await getDoc(editRef);
+          if (fallback.exists() && fallback.data().fullname) {
+            resolvedName = fallback.data().fullname;
+          }
+        } catch (e) { /* ignore */ }
+        welcomeNameEl.textContent = `Welcome, ${resolvedName}`;
+      });
+    } catch (e) {
+      console.warn('load profile err', e);
+      welcomeNameEl.textContent = `Welcome, ${resolvedName}`;
+    }
+  });
+
+
+</script>
+</body>
+</html>
