@@ -1,141 +1,187 @@
+// dashboard-search.js (drop-in replacement — non-module)
+import { BOOKVERSE_DATA } from './books.js'; // adjust path
+// then use BOOKVERSE_DATA variable directly (no window.)
+
 (function () {
-  // Ensure BOOKVERSE_DATA is available
-  if (typeof BOOKVERSE_DATA === "undefined") {
-    console.warn("BOOKVERSE_DATA not found; search will be disabled.");
+  const searchInput = document.getElementById("searchInput");
+  const resultsBox = document.getElementById("searchResults");
+
+  if (!searchInput || !resultsBox) {
+    console.error("dashboard-search.js: Missing #searchInput or #searchResults in DOM.");
+    return;
+  }
+  console.info("dashboard-search.js loaded.");
+
+  // --- Ensure BOOKVERSE_DATA exists as global ---
+  if (!window.BOOKVERSE_DATA) {
+    console.error("dashboard-search.js: window.BOOKVERSE_DATA not found. Make sure books.js is included BEFORE dashboard-search.js");
+    resultsBox.innerHTML = "<div class='no-result'>Search unavailable — books data missing.</div>";
     return;
   }
 
-  const input = document.getElementById("searchInput");
-  const resultsBox = document.getElementById("searchResults");
-
-  function normalize(s) {
-    return (s || "").toString().toLowerCase();
-  }
-
-  // Find matches by title or author
-  function findMatches(query) {
-    const q = normalize(query).trim();
-    if (!q) return [];
-    const matches = [];
-
-    Object.keys(BOOKVERSE_DATA).forEach((domain) => {
-      const subcats = BOOKVERSE_DATA[domain];
-      Object.keys(subcats).forEach((sub) => {
-        const arr = subcats[sub];
-        arr.forEach((book) => {
-          const hay = [book.title, book.author].join(" ").toLowerCase();
-          if (hay.includes(q)) {
-            matches.push({ ...book, domain, sub });
-          }
+  // --- Flatten nested data ---
+  function flattenData(nested) {
+    const flat = [];
+    Object.entries(nested || {}).forEach(([category, sections]) => {
+      if (!sections || typeof sections !== "object") return;
+      Object.entries(sections).forEach(([sectionName, booksArr]) => {
+        if (!Array.isArray(booksArr)) return;
+        booksArr.forEach(book => {
+          flat.push({
+            id: book.id || `${category}::${sectionName}::${book.title}`,
+            title: book.title || "",
+            authors: book.authors || (book.author ? [book.author] : []),
+            authorStr: book.author || (Array.isArray(book.authors) ? book.authors.join(", ") : ""),
+            tags: (book.tags || []).map(String),
+            href: book.href || "",
+            category,
+            section: sectionName,
+            raw: book
+          });
         });
       });
     });
-
-    return matches;
+    return flat;
   }
 
-  // Render results: show book title + author beside
+  const FLAT = flattenData(window.BOOKVERSE_DATA || {});
+  console.info("dashboard-search.js: Flattened books count =", FLAT.length);
+
+  // --- Helpers ---
+  function normalize(s) { return String(s || "").toLowerCase(); }
+  function matches(item, q) {
+    if (!q) return false;
+    q = q.toLowerCase();
+    if (normalize(item.title).includes(q)) return true;
+    if (normalize(item.authorStr).includes(q)) return true;
+    if ((item.authors || []).some(a => normalize(a).includes(q))) return true;
+    if (normalize((item.tags || []).join(" ")).includes(q)) return true;
+    if (normalize(item.category).includes(q)) return true;
+    if (normalize(item.section).includes(q)) return true;
+    return false;
+  }
+
+  // --- Section -> page mapping (edit filenames if different) ---
+  const SECTION_TO_PAGE = {
+    "CS Fundamentals": "cs-fund.html",
+    "Programming": "prog.html",
+    "Advanced Topics": "adv-topics.html",
+    "Civil Engineering": "civil.html",
+    "Electrical Engineering": "electrical.html",
+    "Mechanical Engineering": "mechanical.html",
+    "Eco-Social": "environment.html",
+    "Lifestyle & Wellness": "lifestyle.html",
+    "Research Papers": "research-papers.html"
+  };
+  function sectionToPage(section) {
+    if (!section) return null;
+    if (SECTION_TO_PAGE[section]) return SECTION_TO_PAGE[section];
+    const slug = (section || "").toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    return slug ? `${slug}.html` : null;
+  }
+
+  // --- Render results (minimal markup) ---
   function renderResults(list) {
     resultsBox.innerHTML = "";
-    if (!list.length) {
-      resultsBox.hidden = true;
+    // Force results visible over any overlay (temporary)
+    resultsBox.style.zIndex = 9999;
+    resultsBox.style.background = "rgba(255,255,255,0.98)";
+    resultsBox.style.maxHeight = "400px";
+    resultsBox.style.overflow = "auto";
+    resultsBox.style.border = "1px solid rgba(0,0,0,0.06)";
+    resultsBox.style.padding = "6px";
+    resultsBox.style.boxShadow = "0 6px 18px rgba(2,6,23,0.08)";
+
+    if (!list || list.length === 0) {
+      const nr = document.createElement("div");
+      nr.className = "no-result";
+      nr.textContent = "No results found";
+      resultsBox.appendChild(nr);
       return;
     }
-    resultsBox.hidden = false;
 
-    list.slice(0, 15).forEach((b) => {
-      const item = document.createElement("div");
-      item.className = "search-item";
-      item.setAttribute("role", "option");
-      item.tabIndex = 0;
+    list.slice(0, 50).forEach(item => {
+      const row = document.createElement("div");
+      row.className = "result-item";
+      row.tabIndex = 0;
+      row.style.padding = "8px 10px";
+      row.style.cursor = "pointer";
+      row.style.borderRadius = "8px";
+      row.style.marginBottom = "6px";
 
-      const title = document.createElement("span");
-      title.className = "search-title";
-      title.textContent = b.title;
+      row.addEventListener("mouseenter", () => row.style.background = "rgba(0,0,0,0.04)");
+      row.addEventListener("mouseleave", () => row.style.background = "transparent");
 
-      const author = document.createElement("span");
-      author.className = "search-author";
-      author.textContent = b.author ? ` — ${b.author}` : "";
+      const title = document.createElement("div");
+      title.className = "res-title";
+      title.textContent = item.title || "(no title)";
+      title.style.fontWeight = "700";
 
-      item.appendChild(title);
-      item.appendChild(author);
+      const sub = document.createElement("div");
+      sub.className = "res-sub";
+      sub.textContent = item.authorStr || `${item.category} › ${item.section}`;
+      sub.style.fontSize = ".92rem";
+      sub.style.color = "#374151";
 
-      // Click redirects to page
-      item.addEventListener("click", () => {
-        openPage(b);
-        resultsBox.hidden = true;
-      });
+      row.appendChild(title);
+      row.appendChild(sub);
 
-      // Keyboard support
-      item.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          openPage(b);
-          resultsBox.hidden = true;
+      row.addEventListener("click", () => {
+        // 1) if href is .html go direct
+        if (item.href && typeof item.href === "string" && item.href.trim().toLowerCase().endsWith(".html")) {
+          window.location.href = item.href;
+          return;
         }
+        // 2) try section -> page
+        const page = sectionToPage(item.section);
+        if (page) {
+          window.location.href = page;
+          return;
+        }
+        // 3) fallback to href (pdf)
+        if (item.href) {
+          window.location.href = item.href;
+          return;
+        }
+        console.warn("No navigation for item", item);
       });
 
-      resultsBox.appendChild(item);
+      row.addEventListener("keydown", (e) => { if (e.key === "Enter") row.click(); });
+
+      resultsBox.appendChild(row);
     });
   }
 
-  // Redirect to the book’s page
-  function openPage(book) {
-    if (!book) return;
-
-    if (book.page) {
-      window.location.href =
-        book.page + "#" + encodeURIComponent(book.title.replace(/\s+/g, "-"));
-      return;
-    }
-
-    const inferredMap = {
-      "Computer Science": "cs.html",
-      "Civil Engineering": "civil.html",
-      "Electrical Engineering": "ee.html",
-      "Mechanical Engineering": "mech.html",
-    };
-
-    const targetPage = inferredMap[book.domain] || "index.html";
-    window.location.href =
-      targetPage + "#" + encodeURIComponent(book.title.replace(/\s+/g, "-"));
-  }
-
-  // Debounced input
+  // --- Input handling (debounced) ---
   let timer = null;
-  input.addEventListener("input", () => {
+  searchInput.addEventListener("input", () => {
+    const q = searchInput.value.trim();
     clearTimeout(timer);
     timer = setTimeout(() => {
-      const q = input.value || "";
-      const matches = findMatches(q);
-      renderResults(matches);
-    }, 160);
-  });
-
-  // Clickable search icon
-  const searchIcon = document.querySelector(".search-box i");
-  if (searchIcon) {
-    searchIcon.addEventListener("click", () => {
-      const query = input.value.trim();
-      if (query) {
-        const matches = findMatches(query);
-        renderResults(matches);
+      if (!q) {
+        resultsBox.innerHTML = "";
+        return;
       }
-    });
-  }
-
-  // Hide when clicking outside
-  document.addEventListener("click", (e) => {
-    if (!resultsBox.contains(e.target) && e.target !== input) {
-      resultsBox.hidden = true;
-    }
+      const filtered = FLAT.filter(item => matches(item, q));
+      console.info("Search:", q, "→ matches:", filtered.length);
+      renderResults(filtered);
+    }, 100);
   });
 
-  // Escape closes results
-  input.addEventListener("keydown", (e) => {
+  // Escape clears
+  searchInput.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
-      resultsBox.hidden = true;
-      input.blur();
+      searchInput.value = "";
+      resultsBox.innerHTML = "";
+      searchInput.blur();
     }
   });
+
+  // optional: close when clicking outside
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest(".search-box")) {
+      // resultsBox.innerHTML = ""; // keep commented while debugging
+    }
+  });
+
 })();
