@@ -9,15 +9,23 @@
 </head>
 <body>
   <header>
-    <div class="logo">
-        <i class="fas fa-book"></i> BookVerse
+    <div class="header-left">
+      <div class="logo"><i class="fa-solid fa-book"></i><span style="margin-left:6px;">BookVerse</span></div>
+      <div id="welcomeName">Welcome</div>
     </div>
-</header>
+
+    <div class="header-right">
+      <div id="dateTime" aria-live="polite" title="Current date and time">
+        <span id="dtText">—</span>
+        <small>IST</small>
+      </div>
+    </div>
+  </header>
 <div class="main-container">
 <div class="sidebar" id="sidebar">
   <a href="dashboard.html"><i class="fa-solid fa-house"></i> Dashboard</a>
-  <a href="profile.html"><i class="fa-solid fa-user"></i> Profile</a>
   <a href="library.html"><i class="fa-solid fa-book-open"></i> My Library</a>
+  <a href="profile.html"><i class="fa-solid fa-user"></i> Profile</a>
   <a href="home.html"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
 </div>
 
@@ -64,11 +72,10 @@
 </div>
 </div>
 </div>
-
 <script type="module">
 import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // Elements
 const nameInput = document.getElementById("name");
@@ -133,9 +140,12 @@ onAuthStateChanged(auth, async (user) => {
   if (!user) return (window.location.href = "login.html");
 
   try {
+    // existing signup doc (if you store base profile there)
     const usersRef = doc(db, "users", user.uid);
     const usersSnap = await getDoc(usersRef);
-    const editRef = doc(db, "editProfiles", user.uid);
+
+    // NEW: edit profile stored as sub-doc users/{uid}/editProfiles/profile
+    const editRef = doc(db, "users", user.uid, "editProfiles", "profile");
     const editSnap = await getDoc(editRef);
 
     if (usersSnap.exists()) {
@@ -169,7 +179,7 @@ onAuthStateChanged(auth, async (user) => {
 // --- Save Profile ---
 saveBtn.addEventListener("click", async () => {
   const user = auth.currentUser;
-  if (!user) return;
+  if (!user) return (window.location.href = "login.html");
 
   const nameVal = nameInput.value.trim();
   const phoneVal = phoneInput.value.trim();
@@ -216,8 +226,8 @@ saveBtn.addEventListener("click", async () => {
 
   if (!isValid) return;
 
-  // Save to Firebase
-  const editRef = doc(db, "editProfiles", user.uid);
+  // Save to Firestore as a sub-doc under users/{uid}/editProfiles/profile
+  const editRef = doc(db, "users", user.uid, "editProfiles", "profile");
   try {
     await setDoc(editRef, {
       fullname: nameVal,
@@ -226,11 +236,12 @@ saveBtn.addEventListener("click", async () => {
       gender: genderVal,
       updatedAt: new Date(),
       email: user.email
-    });
+    }, { merge: true });
 
+    // also update Firebase Auth displayName
     await updateProfile(user, { displayName: nameVal });
 
-    // ✅ Update sessionStorage immediately
+    // Update sessionStorage immediately
     sessionStorage.setItem("fullname", nameVal);
     sessionStorage.setItem("fullnameUpdatedAt", Date.now());
 
@@ -250,7 +261,73 @@ toggleBtn.addEventListener("click", () => {
   sidebar.classList.toggle("active");
   document.body.classList.toggle('sidebar-active');
 });
-</script>
 
+const welcomeNameEl = document.getElementById('welcomeName'); // <div id="welcomeName">
+  const dtText = document.getElementById('dtText'); 
+   // --- Clock: write only into the dtText span so the small "IST" remains ---
+  function formatKolkata(dt) {
+    try {
+      // human-friendly medium date + short time (Asia/Kolkata)
+      return new Intl.DateTimeFormat('en-IN', {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+        timeZone: 'Asia/Kolkata'
+      }).format(dt);
+    } catch (e) {
+      return dt.toLocaleString();
+    }
+  }
+  function startClock() {
+    function tick() {
+      if (dtText) dtText.textContent = formatKolkata(new Date());
+    }
+    tick();
+    setInterval(tick, 1000);
+  }
+  startClock();
+
+  // --- Welcome name from Firestore (subcollection) with session fallback ---
+  onAuthStateChanged(auth, async (user) => {
+    // default fallback from sessionStorage (if any)
+    const cached = sessionStorage.getItem('fullname') || null;
+    if (!user) {
+      welcomeNameEl.textContent = cached ? `Welcome! ${cached}` : 'Welcome';
+      return;
+    }
+
+    // optimistic display
+    let resolvedName = user.displayName || cached || 'Welcome';
+    welcomeNameEl.textContent = `Welcome! ${resolvedName}`;
+
+    // subscribe to subcollection doc: users/{uid}/editProfiles/profile
+    try {
+      const editRef = doc(db, 'users', user.uid, 'editProfiles', 'profile');
+      onSnapshot(editRef, snap => {
+        if (snap.exists() && snap.data().fullname) {
+          resolvedName = snap.data().fullname;
+        }
+        welcomeNameEl.textContent = `Welcome! ${resolvedName}`;
+        // cache small
+        sessionStorage.setItem('fullname', resolvedName);
+        sessionStorage.setItem('fullnameUpdatedAt', Date.now());
+      }, async (err) => {
+        console.warn('profile snapshot err', err);
+        // fallback to a single get if snapshot fails
+        try {
+          const fallback = await getDoc(editRef);
+          if (fallback.exists() && fallback.data().fullname) {
+            resolvedName = fallback.data().fullname;
+          }
+        } catch (e) { /* ignore */ }
+        welcomeNameEl.textContent = `Welcome, ${resolvedName}`;
+      });
+    } catch (e) {
+      console.warn('load profile err', e);
+      welcomeNameEl.textContent = `Welcome, ${resolvedName}`;
+    }
+  });
+
+
+</script>
 </body>
 </html>

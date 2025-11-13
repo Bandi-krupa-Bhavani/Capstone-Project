@@ -17,24 +17,28 @@ body {
    HEADER
 =========================== */
 header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  background: rgba(62, 44, 32, 0.95);
-  color: #F5E6D3;
-  padding: 15px 50px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  z-index: 10;
-}
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding: 0 20px;
+      background: rgba(62,44,32,0.95);
+      color: #F5E6D3;
+      z-index: 1000;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+    }
 
-header .logo {
-  font-size: 22px;
-  font-weight: bold;
-  color: #F5E6D3;
-}
+     /* left and right groups */
+    .header-left, .header-right { display:flex; align-items:center; gap:12px; }
+    .logo { display:flex; align-items:center; gap:8px; font-weight:700; font-size:20px; color:#F5E6D3; }
+    .logo i { font-size:20px; }
+    #welcomeName { font-weight:600; color:#F5E6D3; margin-left:15px; font-size:0.98rem; }
+    #dateTime { font-size:0.9rem; color: rgba(245,230,211,0.95); padding:6px 10px; background: rgba(0,0,0,0.08); border-radius:8px; display:flex; align-items:center; gap:8px; }
+    #dateTime small { font-size:0.9rem; font-weight:800;opacity:0.9; color:rgba(245,230,211,0.9); }
 
 /* ===========================
    SIDEBAR

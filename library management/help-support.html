@@ -9,16 +9,24 @@
 </head>
 <body>
 <header>
-  <div class="logo">
-    <i class="fas fa-book"></i> BookVerse
-  </div>
-</header>
+    <div class="header-left">
+      <div class="logo"><i class="fa-solid fa-book"></i><span style="margin-left:6px;">BookVerse</span></div>
+      <div id="welcomeName">Welcome</div>
+    </div>
+
+    <div class="header-right">
+      <div id="dateTime" aria-live="polite" title="Current date and time">
+        <span id="dtText">—</span>
+        <small>IST</small>
+      </div>
+    </div>
+  </header>
 
 <!-- Sidebar -->
 <div class="sidebar" id="sidebar">
   <a href="dashboard.html"><i class="fa-solid fa-house"></i> Dashboard</a>
-  <a href="profile.html"><i class="fa-solid fa-user"></i> Profile</a>
   <a href="library.html"><i class="fa-solid fa-book-open"></i> My Library</a>
+  <a href="profile.html"><i class="fa-solid fa-user"></i> Profile</a>
   <a href="home.html"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
 </div>
 
@@ -44,15 +52,19 @@
     </details>
 
     <details>
-      <summary>Why can't I access a book in My Library?</summary>
-      <p>Some books may have access restrictions. Ensure you are logged in or contact support for assistance.</p>
+  <summary>How do I add a book to Continue Reading?</summary>
+  <p>Open a book from the Dashboard or Library and click "Resume" (or the add-to-continue action). The book is saved locally and will sync to your account when you sign in.</p>
+</details>
+
+    <details>
+      <summary>Why are my favourites not syncing across devices?</summary>
+      <p>Favourites sync requires you to be signed in. If you are signed in and still see a mismatch, check your network connection and ensure the app has permission to use storage. You can also try signing out and back in to force a sync or check the browser console for errors.</p>
     </details>
 
     <details>
-      <summary>How can I upload or request a book?</summary>
-      <p>You can use the <strong>Upload Book</strong> option under <em>My Library</em> or contact us for special requests.</p>
+      <summary>How do I add or remove a book from My Favourites?</summary>
+      <p>Click the heart icon button on any book card in the Dashboard to add it. To remove, open <em>My Favourites</em> and use the "Remove" button on the card. If you're signed in, changes sync to your account; otherwise they are stored locally in your browser.</p>
     </details>
-  </section>
 
   <!-- Contact Form -->
   <section class="contact-section">
@@ -87,6 +99,9 @@
 
 <!-- ✅ FIREBASE SCRIPT -->
 <script type="module">
+  import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { doc, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
 import { db, auth } from "./firebase-config.js";
 import { 
   collection, 
@@ -121,17 +136,25 @@ supportForm.addEventListener("submit", async (e) => {
 
   try {
     const user = auth.currentUser;
-
-    // Add document to Firestore collection
-    await addDoc(collection(db, "supportRequests"), {
+    const payload = {
       name,
       email,
       category,
       message,
       userId: user ? user.uid : null,
       userEmail: user ? user.email : email,
-      createdAt: serverTimestamp(),
-    });
+      createdAt: serverTimestamp()
+    };
+
+    if (user && user.uid) {
+      // signed-in: save as subcollection under users/{uid}/supportRequests
+      await addDoc(collection(db, "users", user.uid, "supportRequests",), payload);
+      console.log("Support request saved to users/%s/supportRequests", user.uid);
+    } else {
+      // not signed-in: save to root 'supportRequests' (anonymous)
+      await addDoc(collection(db, "supportRequests"), payload);
+      console.log("Support request saved to root supportRequests (anonymous)");
+    }
 
     formMsg.innerText = "✅ Your message has been sent successfully!";
     formMsg.style.color = "green";
@@ -147,6 +170,73 @@ supportForm.addEventListener("submit", async (e) => {
     formMsg.style.color = "red";
   }
 });
+
+const welcomeNameEl = document.getElementById('welcomeName'); // <div id="welcomeName">
+  const dtText = document.getElementById('dtText'); 
+   // --- Clock: write only into the dtText span so the small "IST" remains ---
+  function formatKolkata(dt) {
+    try {
+      // human-friendly medium date + short time (Asia/Kolkata)
+      return new Intl.DateTimeFormat('en-IN', {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+        timeZone: 'Asia/Kolkata'
+      }).format(dt);
+    } catch (e) {
+      return dt.toLocaleString();
+    }
+  }
+  function startClock() {
+    function tick() {
+      if (dtText) dtText.textContent = formatKolkata(new Date());
+    }
+    tick();
+    setInterval(tick, 1000);
+  }
+  startClock();
+
+  // --- Welcome name from Firestore (subcollection) with session fallback ---
+  onAuthStateChanged(auth, async (user) => {
+    // default fallback from sessionStorage (if any)
+    const cached = sessionStorage.getItem('fullname') || null;
+    if (!user) {
+      welcomeNameEl.textContent = cached ? `Welcome! ${cached}` : 'Welcome';
+      return;
+    }
+
+    // optimistic display
+    let resolvedName = user.displayName || cached || 'Welcome';
+    welcomeNameEl.textContent = `Welcome! ${resolvedName}`;
+
+    // subscribe to subcollection doc: users/{uid}/editProfiles/profile
+    try {
+      const editRef = doc(db, 'users', user.uid, 'editProfiles', 'profile');
+      onSnapshot(editRef, snap => {
+        if (snap.exists() && snap.data().fullname) {
+          resolvedName = snap.data().fullname;
+        }
+        welcomeNameEl.textContent = `Welcome! ${resolvedName}`;
+        // cache small
+        sessionStorage.setItem('fullname', resolvedName);
+        sessionStorage.setItem('fullnameUpdatedAt', Date.now());
+      }, async (err) => {
+        console.warn('profile snapshot err', err);
+        // fallback to a single get if snapshot fails
+        try {
+          const fallback = await getDoc(editRef);
+          if (fallback.exists() && fallback.data().fullname) {
+            resolvedName = fallback.data().fullname;
+          }
+        } catch (e) { /* ignore */ }
+        welcomeNameEl.textContent = `Welcome, ${resolvedName}`;
+      });
+    } catch (e) {
+      console.warn('load profile err', e);
+      welcomeNameEl.textContent = `Welcome, ${resolvedName}`;
+    }
+  });
+
+
 </script>
 </body>
 </html>

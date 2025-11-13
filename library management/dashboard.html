@@ -1,70 +1,81 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>BOOKVERSE Dashboard</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BOOKVERSE — Dashboard</title>
+
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Playfair+Display:wght@500;700&display=swap" rel="stylesheet">
-  <!-- FontAwesome for icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-  <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/dashboard.css" />
 </head>
 <body>
+  <!-- Header (profile-style) -->
+  <header>
+    <div class="header-left">
+      <div class="logo"><i class="fa-solid fa-book"></i><span style="margin-left:6px;">BookVerse</span></div>
+      <div id="welcomeName">Welcome</div>
+    </div>
+
+    <div class="header-right">
+      <div id="dateTime" aria-live="polite" title="Current date and time">
+        <span id="dtText">—</span>
+        <small>IST</small>
+      </div>
+    </div>
+  </header>
+
+
+  <!-- Toggle button (profile-like) -->
+  <button class="toggle-btn" id="toggleBtn" aria-label="Toggle sidebar">☰</button>
+
   <!-- Sidebar -->
-  <div class="sidebar" role="navigation">
-    <h2>📚 BOOKVERSE</h2>
-    <a href="dashboard.html" class="nav-link active"><i class="fa-solid fa-house"></i><span>Dashboard</span></a>
-    <a href="profile.html" class="nav-link"><i class="fa-solid fa-user"></i><span>Profile</span></a>
-    <a href="library.html" class="nav-link"><i class="fa-solid fa-book"></i><span>My Library</span></a>
-    <a href="home.html" class="nav-link"><i class="fa-solid fa-right-from-bracket"></i><span>Logout</span></a>
+  <nav class="sidebar" id="sidebar" aria-label="Main navigation">
+    <a href="dashboard.html" class="active"><i class="fa-solid fa-house"></i> Dashboard</a>
+    <a href="library.html"><i class="fa-solid fa-book-open"></i> My Library</a>
+    <a href="profile.html"><i class="fa-solid fa-user"></i> Profile</a>
+    <a href="home.html"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+  </nav>
+
+  <!-- Search below header -->
+  <div class="search-wrap" id="searchWrap">
+    <div class="search-container">
+      <div class="search-box">
+        <input id="searchInput" type="search" placeholder="Search books, authors, topics..." aria-label="Search books" autocomplete="off" />
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <div id="searchResults" class="search-results" role="listbox" aria-label="Search results"></div>
+      </div>
+    </div>
   </div>
 
-  <!-- Main layout -->
-  <div class="main-layout">
-    <header>
-      <button class="toggle-btn" onclick="toggleSidebar()">☰</button>
-      <div class="logo">Welcome!</div>
-       </header>
-      <div class="search-box">
-        <input id="searchInput" type="text" placeholder="Search books, authors, topics..." aria-label="Search books" />
-        <i class="fa-solid fa-magnifying-glass"></i>
-        <div id="searchResults" class="search-results" role="listbox" aria-label="Search results" hidden></div>
-      </div>
+  <!-- Main content -->
+  <main class="main" id="mainContent">
+    <div class="container">
+      <h2 class="section-title">📚 Explore Knowledge</h2>
 
-     <div class="content-area">
-      <main class="main" id="mainContent">
-        <h2 class="section-title">📚 Explore Knowledge</h2>
+      <section class="domain">
+        <h3>Computer Science</h3>
+        <div class="subgrid">
+          <a class="subcard" href="cs-fund.html">
+            <div class="icon-wrap"><i class="fa-solid fa-layer-group"></i></div>
+            <div class="subcard-title">CS Fundamentals</div>
+            <div class="subline">Core theory & concepts</div>
+          </a>
 
-        <section class="domain">
-          <h3>Computer Science</h3>
-          <div class="subgrid" id="csSubgrid">
-            <div class="subcard-wrapper">
-              <a class="subcard" href="cs-fund.html">
-                <div class="icon-wrap"><i class="fa-solid fa-layer-group"></i></div>
-                <span>CS Fundamentals</span>
-                <div class="subline">Core theory & concepts</div>
-              </a>
-            </div>
+          <a class="subcard" href="prog.html">
+            <div class="icon-wrap"><i class="fa-solid fa-code"></i></div>
+            <div class="subcard-title">Programming</div>
+            <div class="subline">Hands-on coding</div>
+          </a>
 
-            <div class="subcard-wrapper">
-              <a class="subcard" href="prog.html">
-                <div class="icon-wrap"><i class="fa-solid fa-code"></i></div>
-                <span>Programming</span>
-                <div class="subline">Hands-on coding</div>
-              </a>
-            </div>
-
-            <div class="subcard-wrapper">
-              <a class="subcard" href="adv-topics.html">
-                <div class="icon-wrap"><i class="fa-solid fa-brain"></i></div>
-                <span>Advanced Topics</span>
-                <div class="subline">ML, Systems, Theory</div>
-              </a>
-            </div>
-          </div>
-        </section>
-
-         <!-- ===== Domain: Engineering example ===== -->
+          <a class="subcard" href="adv-topics.html">
+            <div class="icon-wrap"><i class="fa-solid fa-brain"></i></div>
+            <div class="subcard-title">Advanced Topics</div>
+            <div class="subline">ML, Systems, Theory</div>
+          </a>
+        </div>
+      </section>
+        <!-- ===== Domain: Engineering example ===== -->
         <div class="domain" aria-labelledby="eng-title">
           <h3 id="eng-title">Engineering</h3>
 
@@ -125,72 +136,107 @@
             </div>
           </div>
         </div>
-      </div>
+      <!-- add more domain sections here as needed -->
     </div>
-  </div>
+  </main>
 
-        <!-- more sections omitted for brevity (you can reuse above) -->
+  <!-- ---------- Scripts ---------- -->
+<script type="module">
+  import { auth, db } from "./firebase-config.js";
+  import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { doc, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-      </main>
-    </div>
-  </div>          
+  const welcomeNameEl = document.getElementById('welcomeName'); // <div id="welcomeName">
+  const dtText = document.getElementById('dtText');            // <span id="dtText">
+  const toggleBtn = document.getElementById('toggleBtn');
+  const sidebar = document.getElementById('sidebar');
+  const searchWrap = document.getElementById('searchWrap');
+  const mainEl = document.getElementById('mainContent');
 
-
- <script>
-  function toggleSidebar() {
-  const sidebar = document.querySelector('.sidebar');
-  const body = document.body;
-  const isOpen = sidebar.classList.toggle('open');
-  body.classList.toggle('sidebar-open', isOpen);
-}
-
-
-  function toggleProfileMenu() {
-    const menu = document.getElementById('profileMenu');
-    if (menu) {
-      menu.style.display = (menu.style.display === 'flex') ? 'none' : 'flex';
-    }
-  }
-
-  function toggleChat() {
-    const chat = document.getElementById('chatWindow');
-    if (chat) {
-      chat.style.display = (chat.style.display === 'flex') ? 'none' : 'flex';
-    }
-  }
-
-  // Toggle main domains
-  document.querySelectorAll('.domain h4').forEach(h => {
-    h.addEventListener('click', () => {
-      h.parentElement.classList.toggle('open');
-      const span = h.querySelector('span:last-child');
-      if (span)
-        span.textContent = h.parentElement.classList.contains('open') ? '▲' : '▼';
-    });
+  // --- Sidebar toggle + shift classes (keeps your behaviour) ---
+  toggleBtn.addEventListener('click', () => {
+    sidebar.classList.toggle('active');
+    searchWrap.classList.toggle('shift');
+    mainEl.classList.toggle('shift');
+    document.body.classList.toggle('sidebar-open');
   });
 
-  // Toggle subdomains
-  document.querySelectorAll('.sub-domain h5').forEach(h => {
-    h.addEventListener('click', () => {
-      h.parentElement.classList.toggle('open');
-      const span = h.querySelector('span:last-child');
-      if (span)
-        span.textContent = h.parentElement.classList.contains('open') ? '▲' : '▼';
-    });
-  });
+  // close sidebar when clicking outside
   document.addEventListener('click', (e) => {
-  const sidebar = document.querySelector('.sidebar');
-  if (!sidebar.contains(e.target) && !e.target.closest('.toggle-btn') && sidebar.classList.contains('open')) {
-    sidebar.classList.remove('open');
-    document.body.classList.remove('sidebar-open');
-  }
-});
+    if (!sidebar.contains(e.target) && !e.target.closest('.toggle-btn') && sidebar.classList.contains('active') && !e.target.closest('#toggleBtn')) {
+      sidebar.classList.remove('active');
+      searchWrap.classList.remove('shift');
+      mainEl.classList.remove('shift');
+      document.body.classList.remove('sidebar-open');
+    }
+  });
 
+  // --- Clock: write only into the dtText span so the small "IST" remains ---
+  function formatKolkata(dt) {
+    try {
+      // human-friendly medium date + short time (Asia/Kolkata)
+      return new Intl.DateTimeFormat('en-IN', {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+        timeZone: 'Asia/Kolkata'
+      }).format(dt);
+    } catch (e) {
+      return dt.toLocaleString();
+    }
+  }
+  function startClock() {
+    function tick() {
+      if (dtText) dtText.textContent = formatKolkata(new Date());
+    }
+    tick();
+    setInterval(tick, 1000);
+  }
+  startClock();
+
+  // --- Welcome name from Firestore (subcollection) with session fallback ---
+  onAuthStateChanged(auth, async (user) => {
+    // default fallback from sessionStorage (if any)
+    const cached = sessionStorage.getItem('fullname') || null;
+    if (!user) {
+      welcomeNameEl.textContent = cached ? `Welcome! ${cached}` : 'Welcome';
+      return;
+    }
+
+    // optimistic display
+    let resolvedName = user.displayName || cached || 'Welcome';
+    welcomeNameEl.textContent = `Welcome! ${resolvedName}`;
+
+    // subscribe to subcollection doc: users/{uid}/editProfiles/profile
+    try {
+      const editRef = doc(db, 'users', user.uid, 'editProfiles', 'profile');
+      onSnapshot(editRef, snap => {
+        if (snap.exists() && snap.data().fullname) {
+          resolvedName = snap.data().fullname;
+        }
+        welcomeNameEl.textContent = `Welcome! ${resolvedName}`;
+        // cache small
+        sessionStorage.setItem('fullname', resolvedName);
+        sessionStorage.setItem('fullnameUpdatedAt', Date.now());
+      }, async (err) => {
+        console.warn('profile snapshot err', err);
+        // fallback to a single get if snapshot fails
+        try {
+          const fallback = await getDoc(editRef);
+          if (fallback.exists() && fallback.data().fullname) {
+            resolvedName = fallback.data().fullname;
+          }
+        } catch (e) { /* ignore */ }
+        welcomeNameEl.textContent = `Welcome, ${resolvedName}`;
+      });
+    } catch (e) {
+      console.warn('load profile err', e);
+      welcomeNameEl.textContent = `Welcome, ${resolvedName}`;
+    }
+  });
 </script>
 
-
-  <!-- Book data and search behavior -->
-  <script src="books.js"></script>
-  <script src="dashboard-search.js"></script>
+  <!-- optional: page scripts for books/search (if present in your project) -->
+  <script src="books.js" defer></script>
+  <script src="dashboard-search.js" defer></script>
 </body>
 </html>

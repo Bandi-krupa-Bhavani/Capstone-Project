@@ -9,15 +9,23 @@
 </head>
 <body>
   <header>
-    <div class="logo">
-      <i class="fas fa-book"></i> BookVerse
+    <div class="header-left">
+      <div class="logo"><i class="fa-solid fa-book"></i><span style="margin-left:6px;">BookVerse</span></div>
+      <div id="welcomeName">Welcome</div>
+    </div>
+
+    <div class="header-right">
+      <div id="dateTime" aria-live="polite" title="Current date and time">
+        <span id="dtText">—</span>
+        <small>IST</small>
+      </div>
     </div>
   </header>
 
   <div class="sidebar" id="sidebar">
     <a href="dashboard.html"><i class="fa-solid fa-house"></i> Dashboard</a>
-    <a href="profile.html"><i class="fa-solid fa-user"></i> Profile</a>
     <a href="library.html"><i class="fa-solid fa-book-open"></i> My Library</a>
+    <a href="profile.html"><i class="fa-solid fa-user"></i> Profile</a>
     <a href="home.html"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
   </div>
 
@@ -40,8 +48,11 @@
 <script type="module">
 import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
+import { doc, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  
+const welcomeNameEl = document.getElementById('welcomeName'); // <div id="welcomeName">
+const dtText = document.getElementById('dtText'); 
+ 
 const profileName = document.getElementById("profileName");
 const profilePhotoContainer = document.getElementById("profilePhotoContainer");
 
@@ -100,6 +111,71 @@ toggleBtn.addEventListener("click", () => {
   sidebar.classList.toggle("active");
   mainContent.classList.toggle("shift");
 });
+
+// --- Clock: write only into the dtText span so the small "IST" remains ---
+  function formatKolkata(dt) {
+    try {
+      // human-friendly medium date + short time (Asia/Kolkata)
+      return new Intl.DateTimeFormat('en-IN', {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+        timeZone: 'Asia/Kolkata'
+      }).format(dt);
+    } catch (e) {
+      return dt.toLocaleString();
+    }
+  }
+  function startClock() {
+    function tick() {
+      if (dtText) dtText.textContent = formatKolkata(new Date());
+    }
+    tick();
+    setInterval(tick, 1000);
+  }
+  startClock();
+
+  // --- Welcome name from Firestore (subcollection) with session fallback ---
+  onAuthStateChanged(auth, async (user) => {
+    // default fallback from sessionStorage (if any)
+    const cached = sessionStorage.getItem('fullname') || null;
+    if (!user) {
+      welcomeNameEl.textContent = cached ? `Welcome! ${cached}` : 'Welcome';
+      return;
+    }
+
+    // optimistic display
+    let resolvedName = user.displayName || cached || 'Welcome';
+    welcomeNameEl.textContent = `Welcome! ${resolvedName}`;
+
+    // subscribe to subcollection doc: users/{uid}/editProfiles/profile
+    try {
+      const editRef = doc(db, 'users', user.uid, 'editProfiles', 'profile');
+      onSnapshot(editRef, snap => {
+        if (snap.exists() && snap.data().fullname) {
+          resolvedName = snap.data().fullname;
+        }
+        welcomeNameEl.textContent = `Welcome! ${resolvedName}`;
+        // cache small
+        sessionStorage.setItem('fullname', resolvedName);
+        sessionStorage.setItem('fullnameUpdatedAt', Date.now());
+      }, async (err) => {
+        console.warn('profile snapshot err', err);
+        // fallback to a single get if snapshot fails
+        try {
+          const fallback = await getDoc(editRef);
+          if (fallback.exists() && fallback.data().fullname) {
+            resolvedName = fallback.data().fullname;
+          }
+        } catch (e) { /* ignore */ }
+        welcomeNameEl.textContent = `Welcome, ${resolvedName}`;
+      });
+    } catch (e) {
+      console.warn('load profile err', e);
+      welcomeNameEl.textContent = `Welcome, ${resolvedName}`;
+    }
+  });
+
+
 </script>
 </body>
 </html>
