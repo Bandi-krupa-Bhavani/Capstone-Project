@@ -1,187 +1,317 @@
-// dashboard-search.js (drop-in replacement — non-module)
-import { BOOKVERSE_DATA } from './books.js'; // adjust path
-// then use BOOKVERSE_DATA variable directly (no window.)
-
+// dashboard-search.js — smarter navigation (open correct subpage & anchor), small thumbs
 (function () {
-  const searchInput = document.getElementById("searchInput");
-  const resultsBox = document.getElementById("searchResults");
+  const MAX_WAIT_MS = 3000;
+  const POLL_INTERVAL = 80;
 
-  if (!searchInput || !resultsBox) {
-    console.error("dashboard-search.js: Missing #searchInput or #searchResults in DOM.");
-    return;
-  }
-  console.info("dashboard-search.js loaded.");
+  function log(...args) { console.debug('[search]', ...args); }
 
-  // --- Ensure BOOKVERSE_DATA exists as global ---
-  if (!window.BOOKVERSE_DATA) {
-    console.error("dashboard-search.js: window.BOOKVERSE_DATA not found. Make sure books.js is included BEFORE dashboard-search.js");
-    resultsBox.innerHTML = "<div class='no-result'>Search unavailable — books data missing.</div>";
-    return;
+  function onReady(fn) {
+    if (document.readyState === 'complete' || document.readyState === 'interactive') setTimeout(fn, 0);
+    else document.addEventListener('DOMContentLoaded', fn);
   }
 
-  // --- Flatten nested data ---
-  function flattenData(nested) {
-    const flat = [];
-    Object.entries(nested || {}).forEach(([category, sections]) => {
-      if (!sections || typeof sections !== "object") return;
-      Object.entries(sections).forEach(([sectionName, booksArr]) => {
-        if (!Array.isArray(booksArr)) return;
-        booksArr.forEach(book => {
-          flat.push({
-            id: book.id || `${category}::${sectionName}::${book.title}`,
-            title: book.title || "",
-            authors: book.authors || (book.author ? [book.author] : []),
-            authorStr: book.author || (Array.isArray(book.authors) ? book.authors.join(", ") : ""),
-            tags: (book.tags || []).map(String),
-            href: book.href || "",
-            category,
-            section: sectionName,
-            raw: book
-          });
-        });
-      });
+  function waitForBookData(timeout = MAX_WAIT_MS) {
+    return new Promise((resolve) => {
+      const start = Date.now();
+      (function poll() {
+        if (window && typeof window.BOOKVERSE_DATA !== 'undefined') {
+          resolve(window.BOOKVERSE_DATA);
+          return;
+        }
+        if (Date.now() - start >= timeout) {
+          resolve(null);
+          return;
+        }
+        setTimeout(poll, POLL_INTERVAL);
+      })();
     });
-    return flat;
   }
 
-  const FLAT = flattenData(window.BOOKVERSE_DATA || {});
-  console.info("dashboard-search.js: Flattened books count =", FLAT.length);
-
-  // --- Helpers ---
-  function normalize(s) { return String(s || "").toLowerCase(); }
-  function matches(item, q) {
-    if (!q) return false;
-    q = q.toLowerCase();
-    if (normalize(item.title).includes(q)) return true;
-    if (normalize(item.authorStr).includes(q)) return true;
-    if ((item.authors || []).some(a => normalize(a).includes(q))) return true;
-    if (normalize((item.tags || []).join(" ")).includes(q)) return true;
-    if (normalize(item.category).includes(q)) return true;
-    if (normalize(item.section).includes(q)) return true;
-    return false;
-  }
-
-  // --- Section -> page mapping (edit filenames if different) ---
-  const SECTION_TO_PAGE = {
-    "CS Fundamentals": "cs-fund.html",
-    "Programming": "prog.html",
-    "Advanced Topics": "adv-topics.html",
-    "Civil Engineering": "civil.html",
-    "Electrical Engineering": "electrical.html",
-    "Mechanical Engineering": "mechanical.html",
-    "Eco-Social": "environment.html",
-    "Lifestyle & Wellness": "lifestyle.html",
-    "Research Papers": "research-papers.html"
+  /***** SUB-PAGE MAP: map domain -> subcategory -> page *****/
+  const subPageMap = {
+    "Computer Science": {
+      "CS Fundamentals": "cs-fund.html",
+      "Programming": "prog.html",
+      "Advanced Topics": "adv-topics.html"
+    },
+    "Engineering": {
+      "Civil Engineering": "civil.html",
+      "Electrical Engineering": "electrical.html",
+      "Mechanical Engineering": "mechanical.html"
+    },
+    "Others": {
+      "Eco-Social": "environment.html",
+      "Lifestyle & Wellness": "lifestyle.html",
+      "Research Papers": "research-papers.html"
+    }
   };
-  function sectionToPage(section) {
-    if (!section) return null;
-    if (SECTION_TO_PAGE[section]) return SECTION_TO_PAGE[section];
-    const slug = (section || "").toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-    return slug ? `${slug}.html` : null;
+
+  // fallback domain-level map (used if sub not present)
+  const domainFallback = {
+    "Computer Science": "cs-fund.html",
+    "Engineering": "index.html",
+    "Others": "index.html"
+  };
+
+  // slugify title for anchor
+  function slugifyTitle(title) {
+    return String(title || '').trim().replace(/\s+/g, '-').replace(/[^\w\-]/g, '');
   }
 
-  // --- Render results (minimal markup) ---
-  function renderResults(list) {
-    resultsBox.innerHTML = "";
-    // Force results visible over any overlay (temporary)
-    resultsBox.style.zIndex = 9999;
-    resultsBox.style.background = "rgba(255,255,255,0.98)";
-    resultsBox.style.maxHeight = "400px";
-    resultsBox.style.overflow = "auto";
-    resultsBox.style.border = "1px solid rgba(0,0,0,0.06)";
-    resultsBox.style.padding = "6px";
-    resultsBox.style.boxShadow = "0 6px 18px rgba(2,6,23,0.08)";
+  onReady(async () => {
+    const BOOK_DATA = await waitForBookData();
+    if (!BOOK_DATA) {
+      console.warn('[search] BOOKVERSE_DATA not found within timeout. Make sure books.js is loaded before this script.');
+    } else {
+      log('BOOKVERSE_DATA loaded — top keys:', Object.keys(BOOK_DATA).length);
+    }
 
-    if (!list || list.length === 0) {
-      const nr = document.createElement("div");
-      nr.className = "no-result";
-      nr.textContent = "No results found";
-      resultsBox.appendChild(nr);
+    const input = document.getElementById('searchInput');
+    const resultsBox = document.getElementById('searchResults');
+
+    if (!input || !resultsBox) {
+      console.error('[search] Missing DOM elements:', { inputExists: !!input, resultsBoxExists: !!resultsBox });
       return;
     }
 
-    list.slice(0, 50).forEach(item => {
-      const row = document.createElement("div");
-      row.className = "result-item";
-      row.tabIndex = 0;
-      row.style.padding = "8px 10px";
-      row.style.cursor = "pointer";
-      row.style.borderRadius = "8px";
-      row.style.marginBottom = "6px";
+    function getAuthorString(book) {
+      if (!book) return '';
+      if (typeof book.author === 'string') return book.author;
+      if (Array.isArray(book.authors)) return book.authors.join(', ');
+      return book.author || book.authors || '';
+    }
 
-      row.addEventListener("mouseenter", () => row.style.background = "rgba(0,0,0,0.04)");
-      row.addEventListener("mouseleave", () => row.style.background = "transparent");
+    function normalize(s) { return (s || '').toString().toLowerCase(); }
 
-      const title = document.createElement("div");
-      title.className = "res-title";
-      title.textContent = item.title || "(no title)";
-      title.style.fontWeight = "700";
+    function bookHaystack(book) {
+      const parts = [];
+      if (book.title) parts.push(book.title);
+      const a = getAuthorString(book);
+      if (a) parts.push(a);
+      if (Array.isArray(book.tags)) parts.push(book.tags.join(' '));
+      if (book.year) parts.push(String(book.year));
+      return parts.join(' ').toLowerCase();
+    }
 
-      const sub = document.createElement("div");
-      sub.className = "res-sub";
-      sub.textContent = item.authorStr || `${item.category} › ${item.section}`;
-      sub.style.fontSize = ".92rem";
-      sub.style.color = "#374151";
-
-      row.appendChild(title);
-      row.appendChild(sub);
-
-      row.addEventListener("click", () => {
-        // 1) if href is .html go direct
-        if (item.href && typeof item.href === "string" && item.href.trim().toLowerCase().endsWith(".html")) {
-          window.location.href = item.href;
+    // iterate books regardless of nested or flat shapes
+    function iterateAllBooks(callback) {
+      const data = window.BOOKVERSE_DATA || BOOK_DATA || {};
+      Object.keys(data).forEach((domainKey) => {
+        const val = data[domainKey];
+        if (Array.isArray(val)) {
+          val.forEach(book => callback(book, domainKey, null));
           return;
         }
-        // 2) try section -> page
-        const page = sectionToPage(item.section);
-        if (page) {
-          window.location.href = page;
-          return;
+        if (val && typeof val === 'object') {
+          Object.keys(val).forEach(subKey => {
+            const arr = val[subKey];
+            if (Array.isArray(arr)) arr.forEach(book => callback(book, domainKey, subKey));
+            else if (arr && typeof arr === 'object') callback(arr, domainKey, subKey);
+          });
         }
-        // 3) fallback to href (pdf)
-        if (item.href) {
-          window.location.href = item.href;
-          return;
-        }
-        console.warn("No navigation for item", item);
       });
+    }
 
-      row.addEventListener("keydown", (e) => { if (e.key === "Enter") row.click(); });
+    function findMatches(query) {
+      const q = normalize(query).trim();
+      if (!q) return [];
+      const matches = [];
+      iterateAllBooks((book, domainName, subName) => {
+        const hay = (bookHaystack(book) + ' ' + (domainName || '') + ' ' + (subName || '')).toLowerCase();
+        if (hay.includes(q)) matches.push(Object.assign({}, book, { domain: domainName, sub: subName }));
+      });
+      return matches;
+    }
 
-      resultsBox.appendChild(row);
-    });
-  }
+    // show/hide helpers (force display override)
+    function clearResults() {
+      resultsBox.innerHTML = '';
+      resultsBox.hidden = true;
+      resultsBox.style.display = 'none';
+      resultsBox.removeAttribute('aria-activedescendant');
+    }
 
-  // --- Input handling (debounced) ---
-  let timer = null;
-  searchInput.addEventListener("input", () => {
-    const q = searchInput.value.trim();
-    clearTimeout(timer);
-    timer = setTimeout(() => {
-      if (!q) {
-        resultsBox.innerHTML = "";
+    function renderResults(list) {
+      resultsBox.innerHTML = '';
+      if (!list || list.length === 0) {
+        resultsBox.hidden = true;
+        resultsBox.style.display = 'none';
         return;
       }
-      const filtered = FLAT.filter(item => matches(item, q));
-      console.info("Search:", q, "→ matches:", filtered.length);
-      renderResults(filtered);
-    }, 100);
-  });
+      resultsBox.hidden = false;
+      resultsBox.style.display = 'block';
 
-  // Escape clears
-  searchInput.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") {
-      searchInput.value = "";
-      resultsBox.innerHTML = "";
-      searchInput.blur();
+      list.slice(0, 15).forEach((b, idx) => {
+        const item = document.createElement('div');
+        item.className = 'search-item';
+        item.setAttribute('role', 'option');
+        item.tabIndex = 0;
+        item.id = `search-item-${idx}`;
+
+        // compact horizontal layout
+        item.style.display = 'flex';
+        item.style.alignItems = 'center';
+        item.style.gap = '10px';
+        item.style.padding = '8px';
+        item.style.cursor = 'pointer';
+
+        if (b.cover) {
+          const thumb = document.createElement('img');
+          thumb.className = 'search-thumb';
+          thumb.src = b.cover;
+          thumb.alt = b.title ? `${b.title} cover` : 'cover';
+          thumb.style.width = '44px';
+          thumb.style.height = '58px';
+          thumb.style.objectFit = 'cover';
+          thumb.style.borderRadius = '6px';
+          thumb.style.flex = '0 0 auto';
+          thumb.style.boxShadow = '0 4px 10px rgba(0,0,0,0.06)';
+          item.appendChild(thumb);
+        }
+
+        const meta = document.createElement('div');
+        meta.className = 'search-meta';
+        meta.style.display = 'flex';
+        meta.style.flexDirection = 'column';
+        meta.style.justifyContent = 'center';
+        meta.style.flex = '1 1 auto';
+        meta.style.minWidth = '0';
+
+        const title = document.createElement('div');
+        title.className = 'search-title';
+        title.textContent = b.title || 'Untitled';
+        title.style.fontWeight = '700';
+        title.style.whiteSpace = 'nowrap';
+        title.style.overflow = 'hidden';
+        title.style.textOverflow = 'ellipsis';
+
+        const author = document.createElement('div');
+        author.className = 'search-sub';
+        const authorStr = getAuthorString(b);
+        author.textContent = authorStr ? `— ${authorStr}` : `— ${b.domain || ''}${b.sub ? ' • ' + b.sub : ''}`;
+        author.style.fontSize = '0.9rem';
+        author.style.color = '#6b7280';
+        author.style.whiteSpace = 'nowrap';
+        author.style.overflow = 'hidden';
+        author.style.textOverflow = 'ellipsis';
+
+        meta.appendChild(title);
+        meta.appendChild(author);
+        item.appendChild(meta);
+
+        // interactions
+        item.addEventListener('click', () => { openPage(b); clearResults(); });
+        item.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openPage(b); clearResults(); return; }
+          if (e.key === 'ArrowDown') { e.preventDefault(); const next = item.nextElementSibling; if (next) next.focus(); }
+          if (e.key === 'ArrowUp') { e.preventDefault(); const prev = item.previousElementSibling; if (prev) prev.focus(); else input.focus(); }
+        });
+
+        resultsBox.appendChild(item);
+      });
     }
-  });
 
-  // optional: close when clicking outside
-  document.addEventListener("click", (e) => {
-    if (!e.target.closest(".search-box")) {
-      // resultsBox.innerHTML = ""; // keep commented while debugging
+    /**
+     * Decide final page to open:
+     * - Prefer explicit book.page (if present)
+     * - Else prefer subPageMap[domain][sub]
+     * - If book.href exists and is a PDF, prefer opening the parent page (with anchor) when mapping exists; otherwise open PDF directly
+     * - Fallback to domainFallback
+     */
+  function openPage(book) {
+  if (!book) return;
+
+  const slug = slugifyTitle(book.title);
+  const hash = slug ? ('#' + encodeURIComponent(slug)) : '';
+
+  // 1. explicit page or book.page field
+  if (book.page && typeof book.page === 'string') {
+    window.location.href = book.page + hash;
+    return;
+  }
+
+  // 2. if book.href is HTML file (.html)
+  if (book.href && typeof book.href === 'string' && /\.html?$/i.test(book.href)) {
+    window.location.href = book.href + hash;
+    return;
+  }
+
+  const domain = book.domain || '';
+  const sub = book.sub || '';
+
+  // 3. subpage map (best & most accurate)
+  if (domain && sub && subPageMap[domain] && subPageMap[domain][sub]) {
+    window.location.href = subPageMap[domain][sub] + hash;
+    return;
+  }
+
+  // 4. PDF book: open parent page instead of PDF
+  if (book.href && /\.pdf$/i.test(book.href)) {
+    if (domain && subPageMap[domain]) {
+      const subKeys = Object.keys(subPageMap[domain]);
+      if (subKeys.length >= 1) {
+        window.location.href = subPageMap[domain][subKeys[0]] + hash;
+        return;
+      }
     }
-  });
+    if (domain && domainFallback[domain]) {
+      window.location.href = domainFallback[domain] + hash;
+      return;
+    }
+    // last fallback: open PDF itself
+    window.location.href = book.href;
+    return;
+  }
 
+  // 5. domain fallback
+  if (domain && domainFallback[domain]) {
+    window.location.href = domainFallback[domain] + hash;
+    return;
+  }
+
+  // 6. last resort
+  if (book.href) {
+    window.location.href = book.href;
+    return;
+  }
+
+  window.location.href = 'index.html' + hash;
+}
+
+    // debounce and wiring
+    let timer = null;
+    input.addEventListener('input', () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        const q = input.value || '';
+        if (!q.trim()) { clearResults(); return; }
+        const matches = findMatches(q);
+        renderResults(matches);
+      }, 160);
+    });
+
+    const searchIcon = document.querySelector('.search-box i');
+    if (searchIcon) {
+      searchIcon.addEventListener('click', () => {
+        const q = input.value.trim();
+        if (!q) { clearResults(); return; }
+        renderResults(findMatches(q));
+      });
+    }
+
+    document.addEventListener('click', (e) => {
+      if (!resultsBox.contains(e.target) && e.target !== input && !e.target.closest('.search-box')) clearResults();
+    });
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') { clearResults(); input.blur(); }
+      if (e.key === 'ArrowDown') {
+        const first = resultsBox.querySelector('.search-item');
+        if (first) { e.preventDefault(); first.focus(); }
+      }
+    });
+
+    clearResults();
+    log('search ready — smart nav enabled');
+  });
 })();
