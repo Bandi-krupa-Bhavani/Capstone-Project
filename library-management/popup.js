@@ -4,14 +4,14 @@
 (function () {
   /* ---------- CONFIG ---------- */
   const IMAGE_PATHS = [
-    "css/assets/popups/1.jpg",
-    "css/assets/popups/2.jpg",
-    "css/assets/popups/3.jpg",
-    "css/assets/popups/4.jpg",
-    "css/assets/popups/5.jpg",
-    "css/assets/popups/6.jpg",
-    "css/assets/popups/7.jpg",
-    "css/assets/popups/8.jpg"
+    "css/assets/popups/1.png",
+    "css/assets/popups/2.png",
+    "css/assets/popups/3.png",
+    "css/assets/popups/4.png",
+    "css/assets/popups/5.png",
+    "css/assets/popups/6.png",
+    "css/assets/popups/7.png",
+    "css/assets/popups/8.png"
   ];
 
   const MESSAGES = [
