@@ -140,6 +140,19 @@
     </div>
   </main>
 
+<!-- POPUP -->
+ <!-- POPUP: put this near end of body (before </body>) -->
+<div id="welcomePopup" class="popup-overlay" aria-hidden="true" style="display:none;">
+  <div class="popup-content" role="dialog" aria-modal="true" aria-label="Welcome popup">
+    <button class="close-btn" id="popupCloseBtn" aria-label="Close popup">✖</button>
+
+    <div class="popup-inner">
+      <img id="popupImage" src="" alt="Welcome image - books and reading" />
+      <p class="popup-caption" id="popupCaption" aria-live="polite"></p>
+    </div>
+  </div>
+</div>
+
   <!-- ---------- Scripts ---------- -->
 <script type="module">
   import { auth, db } from "./firebase-config.js";
@@ -201,6 +214,13 @@
       welcomeNameEl.textContent = cached ? `Welcome! ${cached}` : 'Welcome';
       return;
     }
+    
+  // 🔔 SHOW POPUP ONLY IF LOGIN FLAG SET BY LOGIN PAGE
+  const shouldShow = sessionStorage.getItem('showWelcomePopup');
+  if (shouldShow === '1' && window.showWelcomePopup) {
+    window.showWelcomePopup();
+    sessionStorage.removeItem('showWelcomePopup'); // so refresh won't show again
+  }
 
     // optimistic display
     let resolvedName = user.displayName || cached || 'Welcome';
@@ -240,5 +260,6 @@
   <script src="dashboard-search.js" defer></script>
   <!--<script type="module" src="dashboard-search.js"></script>-->
 
+<script src="popup.js" defer></script>
 </body>
 </html>
