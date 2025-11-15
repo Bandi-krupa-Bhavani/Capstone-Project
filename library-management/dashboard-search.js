@@ -134,10 +134,22 @@
     function renderResults(list) {
       resultsBox.innerHTML = '';
       if (!list || list.length === 0) {
-        resultsBox.hidden = true;
-        resultsBox.style.display = 'none';
-        return;
-      }
+  resultsBox.hidden = false;
+  resultsBox.style.display = 'block';
+  resultsBox.innerHTML = `
+    <div style="
+      padding: 12px;
+      color: #6b7280;
+      font-size: 0.95rem;
+      text-align: center;
+      background: #f3f4f6;
+      border-radius: 6px;
+    ">
+      No results found
+    </div>
+  `;
+  return;
+}
       resultsBox.hidden = false;
       resultsBox.style.display = 'block';
 

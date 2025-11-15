@@ -96,6 +96,8 @@
       if (document.getElementById("rememberMe").checked) {
         localStorage.setItem("savedEmail", loginEmail.value);
       }
+          // ⭐ Mark that user just logged in (for popup on dashboard)
+    sessionStorage.setItem("showWelcomePopup", "1");
 
       setTimeout(() => {
         window.location.href = "dashboard.html";
@@ -123,7 +125,9 @@
         createdAt: new Date(),
         provider: "google"
       }, { merge: true });
-
+      
+    // ⭐ Mark login for popup
+    sessionStorage.setItem("showWelcomePopup", "1");
       window.location.href = "dashboard.html";
     } catch (error) {
       console.error("Google login error:", error);
