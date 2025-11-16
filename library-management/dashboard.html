@@ -282,7 +282,7 @@
       const domain = data[domainName];
       for (const categoryName in domain) {
         const booksArr = domain[categoryName];
-        const found = booksArr.find(b => b.id === bookId);
+        const found = booksArr.find(b => b.id === bookId || b.bookId === bookId);
         if (found) {
           return {
             ...found,
@@ -342,7 +342,7 @@
   }
 
   // =========================
-  //  SIMILAR BOOKS
+  //  RULE-BASED SIMILAR BOOKS (FALLBACK)
   // =========================
   function getSimilarFromCatalogue(seedBook) {
     if (!seedBook) return [];
@@ -396,6 +396,138 @@
   }
 
   // =========================
+  //  AI RECOMMENDER HELPERS
+  // =========================
+
+  function buildAIVocabulary() {
+    const data = window.BOOKVERSE_DATA || {};
+    const vocabSet = new Set();
+
+    for (const domainName in data) {
+      const domain = data[domainName];
+      vocabSet.add(`domain:${domainName}`);
+
+      for (const categoryName in domain) {
+        const booksArr = domain[categoryName];
+        vocabSet.add(`cat:${categoryName}`);
+
+        booksArr.forEach(b => {
+          if (Array.isArray(b.tags)) {
+            b.tags.forEach(t => vocabSet.add(`tag:${String(t).toLowerCase()}`));
+          }
+        });
+      }
+    }
+
+    return Array.from(vocabSet);
+  }
+
+  const AI_VOCAB = buildAIVocabulary();
+  const AI_VOCAB_INDEX = AI_VOCAB.reduce((map, token, idx) => {
+    map[token] = idx;
+    return map;
+  }, {});
+
+  function vectorForBook(book) {
+    const vec = new Array(AI_VOCAB.length).fill(0);
+    if (!book) return vec;
+
+    // domain
+    if (book.domain) {
+      const key = `domain:${book.domain}`;
+      const idx = AI_VOCAB_INDEX[key];
+      if (idx !== undefined) vec[idx] = 1;
+    }
+
+    // category
+    if (book.category) {
+      const key = `cat:${book.category}`;
+      const idx = AI_VOCAB_INDEX[key];
+      if (idx !== undefined) vec[idx] = 1;
+    }
+
+    // tags
+    if (Array.isArray(book.tags)) {
+      book.tags.forEach(t => {
+        const key = `tag:${String(t).toLowerCase()}`;
+        const idx = AI_VOCAB_INDEX[key];
+        if (idx !== undefined) vec[idx] = 1;
+      });
+    }
+
+    return vec;
+  }
+
+  function addVectors(a, b) {
+    const res = new Array(a.length);
+    for (let i = 0; i < a.length; i++) {
+      res[i] = a[i] + b[i];
+    }
+    return res;
+  }
+
+  function scaleVector(vec, scalar) {
+    return vec.map(v => v * scalar);
+  }
+
+  function cosineSimilarity(a, b) {
+    let dot = 0, normA = 0, normB = 0;
+    for (let i = 0; i < a.length; i++) {
+      dot   += a[i] * b[i];
+      normA += a[i] * a[i];
+      normB += b[i] * b[i];
+    }
+    if (!normA || !normB) return 0;
+    return dot / (Math.sqrt(normA) * Math.sqrt(normB));
+  }
+
+  function buildUserProfileFromFavDocs(favDocs) {
+    if (!favDocs || !favDocs.length || !AI_VOCAB.length) return null;
+
+    let sumVec = null;
+    let count  = 0;
+
+    favDocs.forEach(docSnap => {
+      const favData = docSnap.data();
+      const favId   = favData.bookId || favData.id || docSnap.id;
+
+      const book = findBookInCatalogue(favId);
+      if (!book) return; // skip if ID not in catalogue
+
+      const vec = vectorForBook(book);
+      if (!sumVec) {
+        sumVec = vec;
+      } else {
+        sumVec = addVectors(sumVec, vec);
+      }
+      count += 1;
+    });
+
+    if (!sumVec || count === 0) return null;
+
+    return scaleVector(sumVec, 1 / count); // average user profile
+  }
+
+  function getAIRecommendationsForUserProfile(userProfileVec, limit = 5) {
+    if (!userProfileVec || !AI_VOCAB.length) return [];
+
+    const allBooks = getAllBooksFromCatalogue();
+    const scored = [];
+
+    allBooks.forEach(book => {
+      const vec = vectorForBook(book);
+      const sim = cosineSimilarity(userProfileVec, vec);
+      if (sim > 0) {
+        scored.push({ book, score: sim });
+      }
+    });
+
+    scored.sort((a, b) => b.score - a.score);
+
+    return scored.slice(0, limit).map(x => x.book);
+  }
+
+  // =========================
   //  RECOMMENDATION CAROUSEL VIEW
   // =========================
   function updateRecCarouselView() {
@@ -428,7 +560,7 @@
       </div>
       <div class="rec-text">
         <div class="rec-title">${book.title || 'Untitled Book'}</div>
-        <div class="rec-author">${book.author || ''}</div>
+        <div class="rec-author">${book.author || book.authors?.join(', ') || ''}</div>
         <div class="rec-meta">${book.category || ''}</div>
       </div>
     `;
@@ -500,12 +632,14 @@
     }
 
     headingEl.textContent = `Because you liked ${seedBook.title || "this book"}`;
-    subEl.textContent = "Similar books by domain, category, tags and author.";
+    subEl.textContent = "AI-based recommendations using your favourites’ domain, category & tags.";
 
     updateRecCarouselView();
   }
 
-  // 🔹 One-time load → old user ki immediate recs
+  // =========================
+  //  ONE-SHOT LOAD (OLD USERS) — AI FIRST
+  // =========================
   async function oneShotLoadRecommendations(userId) {
     try {
       const favRef = collection(db, "users", userId, "favorites");
@@ -519,7 +653,13 @@
         return;
       }
 
-      const latestDoc = snap.docs[0];
+      const favDocs = snap.docs;
+
+      // AI profile from ALL favourites
+      const userProfileVec = buildUserProfileFromFavDocs(favDocs);
+
+      // Use most recent favourite for heading text
+      const latestDoc = favDocs[0];
       const favData   = latestDoc.data();
       const favId =
         favData.bookId ||
@@ -527,39 +667,46 @@
         latestDoc.id;
 
       let seedBook = findBookInCatalogue(favId);
-
       if (!seedBook) {
-        seedBook = {
-          id: favId,
-          ...favData
-        };
+        seedBook = { id: favId, ...favData };
       }
 
-      let recs = getSimilarFromCatalogue(seedBook);
+      let recs = [];
 
+      if (userProfileVec) {
+        recs = getAIRecommendationsForUserProfile(userProfileVec, 5)
+          .filter(b => b.id !== seedBook.id);
+      }
+
+      // Fallback: old rule-based logic
       if (!recs.length) {
-        const all = getAllBooksFromCatalogue();
-        const sameDomain = all.filter(
-          (b) => b.id !== seedBook.id &&
-                 seedBook.domain &&
-                 b.domain === seedBook.domain
-        );
+        recs = getSimilarFromCatalogue(seedBook);
 
-        if (sameDomain.length) {
-          recs = sameDomain.slice(0, 3);
-        } else {
-          recs = all.filter(b => b.id !== seedBook.id).slice(0, 3);
+        if (!recs.length) {
+          const all = getAllBooksFromCatalogue();
+          const sameDomain = all.filter(
+            (b) => b.id !== seedBook.id &&
+                   seedBook.domain &&
+                   b.domain === seedBook.domain
+          );
+
+          if (sameDomain.length) {
+            recs = sameDomain.slice(0, 3);
+          } else {
+            recs = all.filter(b => b.id !== seedBook.id).slice(0, 3);
+          }
         }
       }
 
       renderBecauseYouLiked(seedBook, recs);
     } catch (e) {
       console.error("[dash] oneShotLoadRecommendations error:", e);
+      renderBecauseYouLiked(null, []);
     }
   }
 
   // =========================
-  //  FAVORITES SNAPSHOT (LIVE RECS)
+  //  FAVORITES SNAPSHOT (LIVE RECS) — AI FIRST
   // =========================
   function setupFavoritesListener(userId, hasInitialUI = false) {
     if (favUnsub) {
@@ -592,7 +739,12 @@
 
         isFirstSnapshot = false;
 
-        const favDocs    = snap.docs;
+        const favDocs = snap.docs;
+
+        // 1️⃣ AI user profile from ALL favourites
+        const userProfileVec = buildUserProfileFromFavDocs(favDocs);
+
+        // 2️⃣ Most recent favourite as seed for heading
         const latestDoc  = favDocs[0];
         const favData    = latestDoc.data();
         const favId =
@@ -601,25 +753,34 @@
           latestDoc.id;
 
         let seedBook = findBookInCatalogue(favId);
-
         if (!seedBook) {
-          seedBook = {
-            id: favId,
-            ...favData
-          };
+          seedBook = { id: favId, ...favData };
         }
 
-        let recs = getSimilarFromCatalogue(seedBook);
+        let recs = [];
 
+        // 3️⃣ First try AI-based recommendations
+        if (userProfileVec) {
+          recs = getAIRecommendationsForUserProfile(userProfileVec, 5)
+            .filter(b => b.id !== seedBook.id);
+        }
+
+        // 4️⃣ Fallback to old rule-based logic if needed
         if (!recs.length) {
-          const all = getAllBooksFromCatalogue();
-          const sameDomain = all.filter(
-            b => b.id !== seedBook.id && seedBook.domain && b.domain === seedBook.domain
-          );
-          if (sameDomain.length) {
-            recs = sameDomain.slice(0, 3);
-          } else {
-            recs = all.filter(b => b.id !== seedBook.id).slice(0, 3);
+          recs = getSimilarFromCatalogue(seedBook);
+
+          if (!recs.length) {
+            const all = getAllBooksFromCatalogue();
+            const sameDomain = all.filter(
+              b => b.id !== seedBook.id &&
+                   seedBook.domain &&
+                   b.domain === seedBook.domain
+            );
+            if (sameDomain.length) {
+              recs = sameDomain.slice(0, 3);
+            } else {
+              recs = all.filter(b => b.id !== seedBook.id).slice(0, 3);
+            }
           }
         }
 
@@ -704,12 +865,12 @@
       console.warn('[dash] lastFavSeed parse error', e);
     }
 
-    // 2️⃣ If no lastFavSeed, old user ki one-shot load nundi rec
+    // 2️⃣ If no lastFavSeed, old user ki one-shot load nundi rec (AI first)
     if (!usedLastSeed) {
       await oneShotLoadRecommendations(user.uid);
     }
 
-    // 3️⃣ Live favourites listener (new fav add / remove)
+    // 3️⃣ Live favourites listener (new fav add / remove) — AI first
     setupFavoritesListener(user.uid, usedLastSeed);
   });
 </script>
