@@ -131,76 +131,83 @@
   </div>
 
 <script type="module">
-/* ---------- Clock + Welcome name (uses firebase if available, else sessionStorage fallback) ---------- */
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { doc, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  /* ---------- Imports ---------- */
+  import { auth, db } from "./firebase-config.js";  // same folder as HTML
+  import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { doc, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-const dtText = document.getElementById('dtText');
-const welcomeNameEl = document.getElementById('welcomeName');
+  // 🔴 Use central favourites API
+  import {
+    getLocalFavourites,
+    addFavourite,
+    removeFavourite,
+    isFavouriteLocal
+  } from "./fav-api.js";
 
-// Clock (Asia/Kolkata)
-function formatKolkata(dt){
-  try{
-    return new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Kolkata' }).format(dt);
-  } catch(e){
-    return dt.toLocaleString();
+  const dtText = document.getElementById('dtText');
+  const welcomeNameEl = document.getElementById('welcomeName');
+
+  /* ---------- Clock (Asia/Kolkata) ---------- */
+  function formatKolkata(dt){
+    try{
+      return new Intl.DateTimeFormat('en-IN', {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+        timeZone: 'Asia/Kolkata'
+      }).format(dt);
+    } catch(e){
+      return dt.toLocaleString();
+    }
   }
-}
-function startClock(){
-  function tick(){ if(dtText) dtText.textContent = formatKolkata(new Date()); }
-  tick();
-  setInterval(tick, 1000);
-}
-startClock();
+  function startClock(){
+    function tick(){ if(dtText) dtText.textContent = formatKolkata(new Date()); }
+    tick();
+    setInterval(tick, 1000);
+  }
+  startClock();
 
-// Try to import firebase-config (optional). If available, subscribe to users/{uid}/editProfiles/profile
-(async function tryProfileLookup(){
-  try {
-    const fb = await import('./js/firebase-config.js'); // adjust path if your config is elsewhere
-    const { auth, db } = fb;
+  /* ---------- Welcome name (Firebase profile) ---------- */
+  onAuthStateChanged(auth, async (user) => {
+    const cached = sessionStorage.getItem('fullname') || null;
 
-    onAuthStateChanged(auth, async (user) => {
-      const cached = sessionStorage.getItem('fullname') || null;
-      if (!user) {
-        welcomeNameEl.textContent = cached ? `Welcome! ${cached}` : 'Welcome';
-        return;
-      }
+    if (!user) {
+      welcomeNameEl.textContent = cached ? `Welcome! ${cached}` : 'Welcome';
+      return;
+    }
 
-      // optimistic
-      let resolvedName = user.displayName || cached || 'Welcome';
-      welcomeNameEl.textContent = `Welcome! ${resolvedName}`;
+    let resolvedName = user.displayName || cached || 'Welcome';
+    welcomeNameEl.textContent = `Welcome! ${resolvedName}`;
 
-      // subscribe to subcollection doc
-      try {
-        const editRef = doc(db, 'users', user.uid, 'editProfiles', 'profile');
-        onSnapshot(editRef, snap => {
+    try {
+      const editRef = doc(db, 'users', user.uid, 'editProfiles', 'profile');
+      onSnapshot(
+        editRef,
+        snap => {
           if (snap.exists() && snap.data().fullname) {
             resolvedName = snap.data().fullname;
           }
           welcomeNameEl.textContent = `Welcome! ${resolvedName}`;
           sessionStorage.setItem('fullname', resolvedName);
           sessionStorage.setItem('fullnameUpdatedAt', Date.now());
-        }, async (err) => {
+        },
+        async (err) => {
           console.warn('profile snapshot err', err);
           try {
             const fallback = await getDoc(editRef);
-            if (fallback.exists() && fallback.data().fullname) resolvedName = fallback.data().fullname;
+            if (fallback.exists() && fallback.data().fullname) {
+              resolvedName = fallback.data().fullname;
+            }
           } catch (e){}
           welcomeNameEl.textContent = `Welcome! ${resolvedName}`;
-        });
-      } catch (e) {
-        console.warn('load profile err', e);
-        welcomeNameEl.textContent = `Welcome! ${resolvedName}`;
-      }
-    });
-  } catch(e){
-    // firebase not available -> fallback to sessionStorage
-    const cached = sessionStorage.getItem('fullname') || null;
-    welcomeNameEl.textContent = cached ? `Welcome! ${cached}` : 'Welcome';
-  }
-})();
+        }
+      );
+    } catch (e) {
+      console.warn('load profile err', e);
+      welcomeNameEl.textContent = `Welcome! ${resolvedName}`;
+    }
+  });
 
-/* ---------- REST OF YOUR CS PAGE LOGIC (unchanged) ---------- */
+  /* ---------- CS Fundamentals books ---------- */
 
 const BOOKS = [
 {
@@ -245,146 +252,223 @@ const BOOKS = [
   }
  ];
 
-const FKEY = "bookverse_favs"; // offline favs (unchanged)
-const CKEY = "bookverse_continue"; // offline continue list
+  // ✅ Continue-reading offline only (same as before)
+  const CKEY = "bookverse_continue";
 
-function getFavsLocal(){ return JSON.parse(localStorage.getItem(FKEY) || "[]"); }
-function getContinueLocal(){ return JSON.parse(localStorage.getItem(CKEY) || "[]"); }
-function addFavLocal(book){ const favs=getFavsLocal(); if(!favs.some(b=>b.id===book.id)){ favs.push(book); localStorage.setItem(FKEY, JSON.stringify(favs)); dispatchFavChange(); return true;} return false; }
-function addContinueLocal(book){ const arr=getContinueLocal(); if(!arr.some(b=>b.id===book.id)){ arr.unshift({...book, lastOpened: Date.now()}); localStorage.setItem(CKEY, JSON.stringify(arr)); dispatchContChange(); return true;} return false; }
-function removeFavLocal(id){ const newf = getFavsLocal().filter(b=>b.id!==id); localStorage.setItem(FKEY, JSON.stringify(newf)); dispatchFavChange(); }
-function removeContinueLocal(id){ const newf = getContinueLocal().filter(b=>b.id!==id); localStorage.setItem(CKEY, JSON.stringify(newf)); dispatchContChange(); }
-function dispatchFavChange(){ try{ localStorage.setItem('__fv_sync', Date.now().toString()); }catch(e){} }
-function dispatchContChange(){ try{ localStorage.setItem('__cont_sync', Date.now().toString()); }catch(e){} }
-
-function iconFor(type){ return type === "pdf" ? "fa-file-pdf" : "fa-file-lines"; }
-
-function renderGrid(list = BOOKS, favSet = new Set(), contSet = new Set()){
-  const grid = document.getElementById('grid');
-  grid.innerHTML = '';
-  list.forEach(b=>{
-    const card = document.createElement('article'); card.className='card'; card.setAttribute('role','listitem');
-    const stripe = document.createElement('div'); stripe.className='accent-strip'; card.appendChild(stripe);
-
-    const left = document.createElement('div'); left.className='card-left';
-    const coverWrap = document.createElement('div'); coverWrap.className='cover-wrap';
-    const img = document.createElement('img'); img.alt=b.title; img.src=b.cover;
-    img.onerror = ()=> img.src='https://via.placeholder.com/120x120?text=Book';
-    coverWrap.appendChild(img); left.appendChild(coverWrap);
-
-    const body = document.createElement('div'); body.className='card-body';
-    const title = document.createElement('div'); title.className='card-title'; title.textContent=b.title;
-    const author = document.createElement('div'); author.className='card-author'; author.innerHTML=`<i class="fa-solid fa-user"></i> ${b.author}`;
-    const meta = document.createElement('div'); meta.className='card-meta'; meta.innerHTML=`<i class="fa-solid ${iconFor(b.type)}"></i> • ${b.type.toUpperCase()} • <i class="fa-regular fa-calendar"></i> ${b.year}`;
-    const chips = document.createElement('div'); chips.className='chips';
-    (b.tags||[]).forEach(t=>{ const c=document.createElement('div'); c.className='chip'; c.textContent=t; chips.appendChild(c); });
-
-    const actions = document.createElement('div'); actions.className='actions';
-    const read = document.createElement('a'); read.className='btn read'; read.href=b.href; read.target='_blank'; read.rel='noopener'; read.innerHTML=`<i class="fa-solid fa-book-open"></i> Read`;
-    const download = document.createElement('a'); download.className='btn download'; download.href=b.href; download.download=''; download.innerHTML=`<i class="fa-solid fa-download"></i> Download`;
-    const favBtn = document.createElement('button'); favBtn.className='btn fav'; favBtn.type='button';
-
-    const isFavNow = favSet.has(b.id);
-    favBtn.innerHTML = isFavNow ? '<i class="fa-solid fa-heart" style="color:#e11d48;"></i> Remove Fav' : '<i class="fa-solid fa-heart" style="color:#e11d48;"></i> Add to Fav';
-
-    favBtn.addEventListener('click', async (ev) => {
-      ev.preventDefault();
-      if(isFavNow){
-        removeFavLocal(b.id);
-        favSet.delete(b.id);
-      } else {
-        addFavLocal(b);
-        favSet.add(b.id);
-      }
-      renderGrid(applyFilterAndSort(), favSet, contSet);
-    });
-
-    read.addEventListener('click', async (ev) => {
-      ev.preventDefault();
-      window.open(b.href, '_blank', 'noopener');
-      try {
-        const mod = await import('./js/continue-api.js');
-        await mod.addContinue(b);
-      } catch(e){
-        addContinueLocal(b);
-      }
-      contSet.add(b.id);
-      renderGrid(applyFilterAndSort(), favSet, contSet);
-    });
-
-    actions.appendChild(read); actions.appendChild(download); actions.appendChild(favBtn);
-
-    body.appendChild(title); body.appendChild(author); body.appendChild(meta); body.appendChild(chips); body.appendChild(actions);
-    card.appendChild(left); card.appendChild(body);
-    grid.appendChild(card);
-  });
-}
-
-function applyFilterAndSort(){
-  const q = document.getElementById('q').value.trim().toLowerCase();
-  const sort = document.getElementById('sort').value;
-  let list = BOOKS.filter(b => { if(!q) return true; return b.title.toLowerCase().includes(q) || (b.author||'').toLowerCase().includes(q) || (b.tags||[]).join(' ').toLowerCase().includes(q); });
-  if(sort === "year-desc") list = list.slice().sort((a,b)=> (b.year||0)-(a.year||0));
-  if(sort === "year-asc") list = list.slice().sort((a,b)=> (a.year||0)-(b.year||0));
-  if(sort === "title") list = list.slice().sort((a,b)=> a.title.localeCompare(b.title));
-  return list;
-}
-document.getElementById('q').addEventListener('input', ()=> renderGrid(applyFilterAndSort(), new Set(getFavsLocal().map(x=>x.id)), new Set(getContinueLocal().map(x=>x.id))));
-document.getElementById('sort').addEventListener('change', ()=> renderGrid(applyFilterAndSort(), new Set(getFavsLocal().map(x=>x.id)), new Set(getContinueLocal().map(x=>x.id))));
-
-renderGrid(BOOKS, new Set(getFavsLocal().map(x=>x.id)), new Set(getContinueLocal().map(x=>x.id)));
-
-(async function tryFirebaseSync(){
-  try {
-    const fb = await import('./js/firebase-config.js');
-    const authMod = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js');
-    const fsMod = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
-    const { auth, db } = fb;
-    const { onAuthStateChanged, signInAnonymously } = authMod;
-    const { collection, query, onSnapshot } = fsMod;
-
-    try { await signInAnonymously(auth); } catch(e){}
-
-    let unsubFavs = null;
-    let unsubContinue = null;
-
-    function favCollectionRef(uid){ return collection(db, 'users', uid, 'favorites'); }
-    function contCollectionRef(uid){ return collection(db, 'users', uid, 'continueReading'); }
-
-    onAuthStateChanged(auth, user => {
-      if(user){
-        if(unsubFavs) unsubFavs();
-        unsubFavs = onSnapshot(query(favCollectionRef(user.uid)), snap => {
-          const arr = snap.docs.map(d=>d.data());
-          try { localStorage.setItem(FKEY, JSON.stringify(arr)); } catch(e){}
-          renderGrid(applyFilterAndSort(), new Set(arr.map(x=>x.id)), new Set(getContinueLocal().map(x=>x.id)));
-        }, err => { console.warn('fav snapshot', err); });
-
-        if(unsubContinue) unsubContinue();
-        unsubContinue = onSnapshot(query(contCollectionRef(user.uid)), snap => {
-          const arr = snap.docs.map(d=>d.data());
-          try { localStorage.setItem(CKEY, JSON.stringify(arr)); } catch(e){}
-          renderGrid(applyFilterAndSort(), new Set(getFavsLocal().map(x=>x.id)), new Set(arr.map(x=>x.id)));
-        }, err => { console.warn('continue snapshot', err); });
-
-      } else {
-        if(unsubFavs){ unsubFavs(); unsubFavs = null; }
-        if(unsubContinue){ unsubContinue(); unsubContinue = null; }
-        renderGrid(applyFilterAndSort(), new Set(getFavsLocal().map(x=>x.id)), new Set(getContinueLocal().map(x=>x.id)));
-      }
-    });
-
-    window.addEventListener('storage', (e) => {
-      if(e.key === FKEY || e.key === CKEY || e.key === '__cont_sync' || e.key === '__fv_sync'){
-        renderGrid(applyFilterAndSort(), new Set(getFavsLocal().map(x=>x.id)), new Set(getContinueLocal().map(x=>x.id)));
-      }
-    });
-
-  } catch(err){
-    console.warn('firebase sync unavailable', err);
+  function getContinueLocal(){
+    try{
+      return JSON.parse(localStorage.getItem(CKEY) || "[]");
+    } catch(e){
+      return [];
+    }
   }
-})();
+
+  function addContinueLocal(book){
+    const arr = getContinueLocal();
+    if (!arr.some(b => b.id === book.id)) {
+      arr.unshift({ ...book, lastOpened: Date.now() });
+      localStorage.setItem(CKEY, JSON.stringify(arr));
+      try{ localStorage.setItem('__cont_sync', Date.now().toString()); }catch(e){}
+      return true;
+    }
+    return false;
+  }
+
+  function iconFor(type){ return type === "pdf" ? "fa-file-pdf" : "fa-file-lines"; }
+
+  // ✅ Build sets from shared favourites API
+  function buildFavSet() {
+    return new Set(
+      getLocalFavourites().map(b => b.id || b.bookId)
+    );
+  }
+
+  function buildContinueSet() {
+    return new Set(
+      getContinueLocal().map(b => b.id)
+    );
+  }
+
+  /* ---------- Filter + Sort ---------- */
+  function applyFilterAndSort(){
+    const qEl   = document.getElementById('q');
+    const sortEl= document.getElementById('sort');
+
+    const q    = qEl ? qEl.value.trim().toLowerCase() : "";
+    const sort = sortEl ? sortEl.value : "default";
+
+    let list = BOOKS.filter(b => {
+      if (!q) return true;
+      return (
+        b.title.toLowerCase().includes(q) ||
+        (b.author || '').toLowerCase().includes(q) ||
+        (b.tags || []).join(' ').toLowerCase().includes(q)
+      );
+    });
+
+    if (sort === "year-desc") list = list.slice().sort((a,b)=> (b.year||0)-(a.year||0));
+    if (sort === "year-asc")  list = list.slice().sort((a,b)=> (a.year||0)-(b.year||0));
+    if (sort === "title")     list = list.slice().sort((a,b)=> a.title.localeCompare(b.title));
+
+    return list;
+  }
+
+  /* ---------- Render grid ---------- */
+  function renderGrid(list = BOOKS){
+    const grid = document.getElementById('grid');
+    if (!grid) return;
+
+    const favSet  = buildFavSet();
+    const contSet = buildContinueSet();
+
+    grid.innerHTML = '';
+
+    list.forEach(b => {
+      const card = document.createElement('article');
+      card.className = 'card';
+      card.setAttribute('role','listitem');
+
+      const stripe = document.createElement('div');
+      stripe.className = 'accent-strip';
+      card.appendChild(stripe);
+
+      const left = document.createElement('div');
+      left.className = 'card-left';
+      const coverWrap = document.createElement('div');
+      coverWrap.className = 'cover-wrap';
+      const img = document.createElement('img');
+      img.alt = b.title;
+      img.src = b.cover;
+      img.onerror = () => img.src = 'https://via.placeholder.com/120x120?text=Book';
+      coverWrap.appendChild(img);
+      left.appendChild(coverWrap);
+
+      const body = document.createElement('div');
+      body.className = 'card-body';
+
+      const title = document.createElement('div');
+      title.className = 'card-title';
+      title.textContent = b.title;
+
+      const author = document.createElement('div');
+      author.className = 'card-author';
+      author.innerHTML = `<i class="fa-solid fa-user"></i> ${b.author}`;
+
+      const meta = document.createElement('div');
+      meta.className = 'card-meta';
+      meta.innerHTML = `<i class="fa-solid ${iconFor(b.type)}"></i> • ${b.type.toUpperCase()} • <i class="fa-regular fa-calendar"></i> ${b.year}`;
+
+      const chips = document.createElement('div');
+      chips.className = 'chips';
+      (b.tags || []).forEach(t => {
+        const c = document.createElement('div');
+        c.className = 'chip';
+        c.textContent = t;
+        chips.appendChild(c);
+      });
+
+      const actions = document.createElement('div');
+      actions.className = 'actions';
+
+      const read = document.createElement('a');
+      read.className = 'btn read';
+      read.href = b.href;
+      read.target = '_blank';
+      read.rel = 'noopener';
+      read.innerHTML = `<i class="fa-solid fa-book-open"></i> Read`;
+
+      const download = document.createElement('a');
+      download.className = 'btn download';
+      download.href = b.href;
+      download.download = '';
+      download.innerHTML = `<i class="fa-solid fa-download"></i> Download`;
+
+      const favBtn = document.createElement('button');
+      favBtn.className = 'btn fav';
+      favBtn.type = 'button';
+
+      const isFav = favSet.has(b.id) || isFavouriteLocal(b.id);
+      favBtn.innerHTML = isFav
+        ? '<i class="fa-solid fa-heart" style="color:#e11d48;"></i> Remove Fav'
+        : '<i class="fa-solid fa-heart" style="color:#e11d48;"></i> Add to Fav';
+
+      // ❤️ FAV CLICK → central API + lastFavSeed
+      favBtn.addEventListener('click', async (ev) => {
+        ev.preventDefault();
+
+        const currentlyFav = isFavouriteLocal(b.id);
+
+        if (currentlyFav) {
+          // remove from local + Firestore
+          await removeFavourite(b.id);
+        } else {
+          // seed object for recs
+          const seedBook = {
+            ...b,
+            domain: "Computer Science",
+            category: "CS Fundamentals"
+          };
+
+          // 👉 dashboard ki hint for instant rec
+          try {
+            sessionStorage.setItem('lastFavSeed', JSON.stringify(seedBook));
+          } catch (e) {
+            console.warn('[cs-fund] lastFavSeed sessionStorage error', e);
+          }
+
+          // add to local + Firestore
+          await addFavourite(seedBook);
+        }
+
+        // re-render with fresh local favourites
+        renderGrid(applyFilterAndSort());
+      });
+
+      // 📖 READ → continue-reading API
+      read.addEventListener('click', async (ev) => {
+        ev.preventDefault();
+        window.open(b.href, '_blank', 'noopener');
+
+        // Try cloud continue-api; fallback to local
+        try {
+          const mod = await import('./continue-api.js');
+          await mod.addContinue(b);
+        } catch(e){
+          addContinueLocal(b);
+        }
+
+        renderGrid(applyFilterAndSort());
+      });
+
+      actions.appendChild(read);
+      actions.appendChild(download);
+      actions.appendChild(favBtn);
+
+      body.appendChild(title);
+      body.appendChild(author);
+      body.appendChild(meta);
+      body.appendChild(chips);
+      body.appendChild(actions);
+
+      card.appendChild(left);
+      card.appendChild(body);
+      grid.appendChild(card);
+    });
+  }
+
+  /* ---------- Search + Sort listeners ---------- */
+  document.getElementById('q').addEventListener('input', () => {
+    renderGrid(applyFilterAndSort());
+  });
+
+  document.getElementById('sort').addEventListener('change', () => {
+    renderGrid(applyFilterAndSort());
+  });
+
+  /* ---------- Initial render ---------- */
+  renderGrid(BOOKS);
 </script>
+
 <script src="domain-hash-filter.js"></script>
 </body>
 </html>
