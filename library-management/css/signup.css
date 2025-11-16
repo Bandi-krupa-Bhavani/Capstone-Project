@@ -88,9 +88,14 @@ body {
   background: #fff;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  padding: 60px 40px 40px;
+  justify-content: flex-start;
+  padding: 40px 40px 15px;
   transition: all 0.3s ease-in-out;
+
+  /* ⭐ Add these 3 lines */
+  overflow-y: auto;
+  max-height: 100vh; 
+  scrollbar-width: thin; /* optional */
 }
 
 .login-form h2 {
@@ -223,7 +228,7 @@ button:disabled {
   border-radius: 8px;
   cursor: pointer;
   font-size: 1rem;
-  margin-top: -5px;
+  margin-top: 10px;
   margin-bottom:5px;
   transition: all 0.3s ease-in-out;
 }
@@ -261,6 +266,7 @@ button:disabled {
 .signup-link {
   text-align: center;
   color: #5d4037;
+  margin-top: 20px;
 }
 
 .signup-link a {
