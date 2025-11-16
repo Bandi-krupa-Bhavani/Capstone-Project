@@ -1,0 +1,10 @@
+{
+  "hosting": {
+    "public": "library-management",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ]
+  }
+}
