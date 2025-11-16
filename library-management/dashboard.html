@@ -50,8 +50,7 @@
 
   <!-- Main content -->
   <main class="main" id="mainContent">
-     <div class="dashboard-layout">
-    <div class="left-container">
+    <div class="container">
       <h2 class="section-title">📚 Explore Knowledge</h2>
 
       <section class="domain">
@@ -139,33 +138,6 @@
         </div>
       <!-- add more domain sections here as needed -->
     </div>
-
-     <!-- RIGHT SIDE — NEW RECOMMENDATIONS SIDEBAR -->
-    <aside class="right-recommend">
-  <h3 id="recHeading">Recommendations</h3>
-  <p id="recSub" style="margin:4px 0 14px; font-size:0.8rem; color:#3e2c20;">
-    Start adding favourites to get personalised suggestions.
-  </p>
-
-  <div class="rec-carousel">
-    <button class="rec-nav" id="recPrev" aria-label="Previous recommendation">‹</button>
-
-    <div class="rec-card-large" id="recCard">
-      <!-- JS will fill -->
-      <p style="font-size:0.8rem; color:#3e2c20; margin:0;">
-        No recommendations yet.
-      </p>
-    </div>
-
-    <button class="rec-nav" id="recNext" aria-label="Next recommendation">›</button>
-  </div>
-
-  <div class="rec-dots" id="recDots">
-    <!-- dots go here -->
-  </div>
-</aside>
-
-    </div>
   </main>
 
 <!-- POPUP -->
@@ -182,52 +154,19 @@
 </div>
 
   <!-- ---------- Scripts ---------- -->
-<script src="books.js"></script>
 <script type="module">
-  import {
-    doc,
-    onSnapshot,
-    getDoc,
-    collection,
-    query,
-    orderBy,
-    getDocs
-  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
   import { auth, db } from "./firebase-config.js";
   import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { doc, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-  // ==== DOM refs ====
-  const welcomeNameEl = document.getElementById('welcomeName');
-  const dtText        = document.getElementById('dtText');
-  const toggleBtn     = document.getElementById('toggleBtn');
-  const sidebar       = document.getElementById('sidebar');
-  const searchWrap    = document.getElementById('searchWrap');
-  const mainEl        = document.getElementById('mainContent');
+  const welcomeNameEl = document.getElementById('welcomeName'); // <div id="welcomeName">
+  const dtText = document.getElementById('dtText');            // <span id="dtText">
+  const toggleBtn = document.getElementById('toggleBtn');
+  const sidebar = document.getElementById('sidebar');
+  const searchWrap = document.getElementById('searchWrap');
+  const mainEl = document.getElementById('mainContent');
 
-  // Recommendation carousel refs
-  const recCardEl   = document.getElementById('recCard');
-  const recDotsEl   = document.getElementById('recDots');
-  const recPrevBtn  = document.getElementById('recPrev');
-  const recNextBtn  = document.getElementById('recNext');
-
-  let recBooksGlobal  = [];
-  let recCurrentIndex = 0;
-  let recSeedBook     = null;
-  let favUnsub        = null;
-
-  // Initial loading state
-  if (recCardEl) {
-    recCardEl.innerHTML = `
-      <p style="font-size:0.8rem; color:#3e2c20; margin:0;">
-        Loading recommendations…
-      </p>
-    `;
-  }
-
-  // =========================
-  //  SIDEBAR TOGGLE
-  // =========================
+  // --- Sidebar toggle + shift classes (keeps your behaviour) ---
   toggleBtn.addEventListener('click', () => {
     sidebar.classList.toggle('active');
     searchWrap.classList.toggle('shift');
@@ -235,13 +174,9 @@
     document.body.classList.toggle('sidebar-open');
   });
 
+  // close sidebar when clicking outside
   document.addEventListener('click', (e) => {
-    if (
-      !sidebar.contains(e.target) &&
-      !e.target.closest('.toggle-btn') &&
-      sidebar.classList.contains('active') &&
-      !e.target.closest('#toggleBtn')
-    ) {
+    if (!sidebar.contains(e.target) && !e.target.closest('.toggle-btn') && sidebar.classList.contains('active') && !e.target.closest('#toggleBtn')) {
       sidebar.classList.remove('active');
       searchWrap.classList.remove('shift');
       mainEl.classList.remove('shift');
@@ -249,11 +184,10 @@
     }
   });
 
-  // =========================
-  //  CLOCK
-  // =========================
+  // --- Clock: write only into the dtText span so the small "IST" remains ---
   function formatKolkata(dt) {
     try {
+      // human-friendly medium date + short time (Asia/Kolkata)
       return new Intl.DateTimeFormat('en-IN', {
         dateStyle: 'medium',
         timeStyle: 'short',
@@ -263,7 +197,6 @@
       return dt.toLocaleString();
     }
   }
-
   function startClock() {
     function tick() {
       if (dtText) dtText.textContent = formatKolkata(new Date());
@@ -273,448 +206,57 @@
   }
   startClock();
 
-  // =========================
-  //  BOOKVERSE_DATA HELPERS
-  // =========================
-  function findBookInCatalogue(bookId) {
-    const data = window.BOOKVERSE_DATA || {};
-    for (const domainName in data) {
-      const domain = data[domainName];
-      for (const categoryName in domain) {
-        const booksArr = domain[categoryName];
-        const found = booksArr.find(b => b.id === bookId);
-        if (found) {
-          return {
-            ...found,
-            domain: domainName,
-            category: categoryName
-          };
-        }
-      }
-    }
-    return null;
-  }
-
-  function getAllBooksFromCatalogue() {
-    const data = window.BOOKVERSE_DATA || {};
-    const all = [];
-    for (const domainName in data) {
-      const domain = data[domainName];
-      for (const categoryName in domain) {
-        const booksArr = domain[categoryName];
-        booksArr.forEach(b => {
-          all.push({
-            ...b,
-            domain: domainName,
-            category: categoryName
-          });
-        });
-      }
-    }
-    return all;
-  }
-
-  function getTargetPageForBook(book) {
-    if (!book) return "library.html";
-
-    const d = book.domain;
-    const c = book.category;
-
-    if (d === "Computer Science") {
-      if (c === "CS Fundamentals") return "cs-fund.html";
-      if (c === "Programming")     return "prog.html";
-      if (c === "Advanced Topics") return "adv-topics.html";
-    }
-
-    if (d === "Engineering") {
-      if (c === "Civil Engineering")      return "civil.html";
-      if (c === "Electrical Engineering") return "electrical.html";
-      if (c === "Mechanical Engineering") return "mechanical.html";
-    }
-
-    if (d === "Others") {
-      if (c === "Eco-Social")           return "environment.html";
-      if (c === "Lifestyle & Wellness") return "lifestyle.html";
-      if (c === "Research Papers")      return "research-papers.html";
-    }
-
-    return "library.html";
-  }
-
-  // =========================
-  //  SIMILAR BOOKS
-  // =========================
-  function getSimilarFromCatalogue(seedBook) {
-    if (!seedBook) return [];
-
-    const allBooks = getAllBooksFromCatalogue();
-    const sameCategory = [];
-    const sameDomain   = [];
-    const others       = [];
-
-    allBooks.forEach(book => {
-      if (book.id === seedBook.id) return;
-
-      if (book.domain === seedBook.domain && book.category === seedBook.category) {
-        sameCategory.push(book);
-      } else if (book.domain === seedBook.domain) {
-        sameDomain.push(book);
-      } else {
-        others.push(book);
-      }
-    });
-
-    function scoreAndSort(arr) {
-      arr.forEach(book => {
-        let score = 0;
-
-        if (book.author && seedBook.author && book.author === seedBook.author) {
-          score += 2;
-        }
-
-        if (Array.isArray(book.tags) && Array.isArray(seedBook.tags)) {
-          const common = seedBook.tags.filter(t => book.tags.includes(t));
-          score += common.length;
-        }
-
-        book._score = score;
-      });
-
-      arr.sort((a, b) => (b._score || 0) - (a._score || 0));
-      return arr;
-    }
-
-    if (sameCategory.length) {
-      return scoreAndSort(sameCategory);
-    }
-
-    if (sameDomain.length) {
-      return scoreAndSort(sameDomain);
-    }
-
-    return scoreAndSort(others);
-  }
-
-  // =========================
-  //  RECOMMENDATION CAROUSEL VIEW
-  // =========================
-  function updateRecCarouselView() {
-    if (!recCardEl || !recDotsEl || !recPrevBtn || !recNextBtn) return;
-
-    if (!recBooksGlobal || recBooksGlobal.length === 0) {
-      recCardEl.innerHTML = `
-        <p style="font-size:0.8rem; color:#3e2c20; margin:0;">
-          No recommendations yet. Start adding favourites to see personalised suggestions.
-        </p>
-      `;
-      recCardEl.onclick = null;
-      recPrevBtn.classList.add('disabled');
-      recNextBtn.classList.add('disabled');
-      recDotsEl.innerHTML = '';
-      return;
-    }
-
-    if (recCurrentIndex < 0) recCurrentIndex = 0;
-    if (recCurrentIndex >= recBooksGlobal.length) {
-      recCurrentIndex = recBooksGlobal.length - 1;
-    }
-
-    const book   = recBooksGlobal[recCurrentIndex];
-    const imgSrc = book.cover || "css/assets/covers/default-book.png";
-
-    recCardEl.innerHTML = `
-      <div class="rec-cover">
-        <img src="${imgSrc}" alt="${book.title || 'Book'}">
-      </div>
-      <div class="rec-text">
-        <div class="rec-title">${book.title || 'Untitled Book'}</div>
-        <div class="rec-author">${book.author || ''}</div>
-        <div class="rec-meta">${book.category || ''}</div>
-      </div>
-    `;
-
-    recCardEl.onclick = () => {
-      const targetPage = getTargetPageForBook(book);
-      const hash       = encodeURIComponent(book.title || book.id);
-      window.location.href = `${targetPage}#${hash}`;
-    };
-
-    if (recBooksGlobal.length <= 1) {
-      recPrevBtn.classList.add('disabled');
-      recNextBtn.classList.add('disabled');
-    } else {
-      recPrevBtn.classList.toggle('disabled', recCurrentIndex === 0);
-      recNextBtn.classList.toggle('disabled', recCurrentIndex === recBooksGlobal.length - 1);
-    }
-
-    recDotsEl.innerHTML = '';
-    recBooksGlobal.forEach((_, idx) => {
-      const dot = document.createElement('button');
-      dot.className = 'rec-dot' + (idx === recCurrentIndex ? ' active' : '');
-      dot.addEventListener('click', () => {
-        recCurrentIndex = idx;
-        updateRecCarouselView();
-      });
-      recDotsEl.appendChild(dot);
-    });
-  }
-
-  if (recPrevBtn) {
-    recPrevBtn.addEventListener('click', () => {
-      if (recBooksGlobal.length <= 1) return;
-      if (recCurrentIndex > 0) {
-        recCurrentIndex -= 1;
-        updateRecCarouselView();
-      }
-    });
-  }
-
-  if (recNextBtn) {
-    recNextBtn.addEventListener('click', () => {
-      if (recBooksGlobal.length <= 1) return;
-      if (recCurrentIndex < recBooksGlobal.length - 1) {
-        recCurrentIndex += 1;
-        updateRecCarouselView();
-      }
-    });
-  }
-
-  // =========================
-  //  RENDER "Because you liked X"
-  // =========================
-  function renderBecauseYouLiked(seedBook, recBooks) {
-    const headingEl = document.getElementById("recHeading");
-    const subEl     = document.getElementById("recSub");
-
-    if (!headingEl || !subEl) return;
-
-    recSeedBook     = seedBook || null;
-    recBooksGlobal  = Array.isArray(recBooks) ? recBooks.slice(0, 5) : [];
-    recCurrentIndex = 0;
-
-    if (!seedBook) {
-      headingEl.textContent = "Recommendations";
-      subEl.textContent = "Start adding favourites to get personalised suggestions.";
-      updateRecCarouselView();
-      return;
-    }
-
-    headingEl.textContent = `Because you liked ${seedBook.title || "this book"}`;
-    subEl.textContent = "Similar books by domain, category, tags and author.";
-
-    updateRecCarouselView();
-  }
-
-  // 🔹 One-time load → old user ki immediate recs
-  async function oneShotLoadRecommendations(userId) {
-    try {
-      const favRef = collection(db, "users", userId, "favorites");
-      const qFav   = query(favRef, orderBy("addedAt", "desc"));
-      const snap   = await getDocs(qFav);
-
-      console.log("[dash] oneShotLoadRecommendations size =", snap.size);
-
-      if (snap.empty) {
-        renderBecauseYouLiked(null, []);
-        return;
-      }
-
-      const latestDoc = snap.docs[0];
-      const favData   = latestDoc.data();
-      const favId =
-        favData.bookId ||
-        favData.id     ||
-        latestDoc.id;
-
-      let seedBook = findBookInCatalogue(favId);
-
-      if (!seedBook) {
-        seedBook = {
-          id: favId,
-          ...favData
-        };
-      }
-
-      let recs = getSimilarFromCatalogue(seedBook);
-
-      if (!recs.length) {
-        const all = getAllBooksFromCatalogue();
-        const sameDomain = all.filter(
-          (b) => b.id !== seedBook.id &&
-                 seedBook.domain &&
-                 b.domain === seedBook.domain
-        );
-
-        if (sameDomain.length) {
-          recs = sameDomain.slice(0, 3);
-        } else {
-          recs = all.filter(b => b.id !== seedBook.id).slice(0, 3);
-        }
-      }
-
-      renderBecauseYouLiked(seedBook, recs);
-    } catch (e) {
-      console.error("[dash] oneShotLoadRecommendations error:", e);
-    }
-  }
-
-  // =========================
-  //  FAVORITES SNAPSHOT (LIVE RECS)
-  // =========================
-  function setupFavoritesListener(userId, hasInitialUI = false) {
-    if (favUnsub) {
-      try { favUnsub(); } catch (e) {}
-      favUnsub = null;
-    }
-
-    const favRef = collection(db, "users", userId, "favorites");
-    const qFav   = query(favRef, orderBy("addedAt", "desc"));
-
-    let isFirstSnapshot = true;
-
-    favUnsub = onSnapshot(
-      qFav,
-      (snap) => {
-        console.log("[dash] favorites snapshot size =", snap.size);
-
-        if (snap.empty) {
-          // first snapshot + already UI unte, clear cheyyakunda vadilesi
-          if (isFirstSnapshot && hasInitialUI) {
-            console.log("[dash] first empty snapshot, keeping existing UI");
-            isFirstSnapshot = false;
-            return;
-          }
-
-          renderBecauseYouLiked(null, []);
-          isFirstSnapshot = false;
-          return;
-        }
-
-        isFirstSnapshot = false;
-
-        const favDocs    = snap.docs;
-        const latestDoc  = favDocs[0];
-        const favData    = latestDoc.data();
-        const favId =
-          favData.bookId ||
-          favData.id     ||
-          latestDoc.id;
-
-        let seedBook = findBookInCatalogue(favId);
-
-        if (!seedBook) {
-          seedBook = {
-            id: favId,
-            ...favData
-          };
-        }
-
-        let recs = getSimilarFromCatalogue(seedBook);
-
-        if (!recs.length) {
-          const all = getAllBooksFromCatalogue();
-          const sameDomain = all.filter(
-            b => b.id !== seedBook.id && seedBook.domain && b.domain === seedBook.domain
-          );
-          if (sameDomain.length) {
-            recs = sameDomain.slice(0, 3);
-          } else {
-            recs = all.filter(b => b.id !== seedBook.id).slice(0, 3);
-          }
-        }
-
-        renderBecauseYouLiked(seedBook, recs);
-      },
-      (err) => {
-        console.error("[dash] favorites snapshot error:", err);
-        renderBecauseYouLiked(null, []);
-      }
-    );
-  }
-
-  // =========================
-  //  AUTH + WELCOME + POPUP + RECS
-  // =========================
+  // --- Welcome name from Firestore (subcollection) with session fallback ---
   onAuthStateChanged(auth, async (user) => {
+    // default fallback from sessionStorage (if any)
     const cached = sessionStorage.getItem('fullname') || null;
-
     if (!user) {
-      if (favUnsub) {
-        try { favUnsub(); } catch (e) {}
-        favUnsub = null;
-      }
       welcomeNameEl.textContent = cached ? `Welcome! ${cached}` : 'Welcome';
-      renderBecauseYouLiked(null, []);
       return;
     }
+    
+  // 🔔 SHOW POPUP ONLY IF LOGIN FLAG SET BY LOGIN PAGE
+  const shouldShow = sessionStorage.getItem('showWelcomePopup');
+  if (shouldShow === '1' && window.showWelcomePopup) {
+    window.showWelcomePopup();
+    sessionStorage.removeItem('showWelcomePopup'); // so refresh won't show again
+  }
 
-    // Popup
-    const shouldShow = sessionStorage.getItem('showWelcomePopup');
-    if (shouldShow === '1' && window.showWelcomePopup) {
-      window.showWelcomePopup();
-      sessionStorage.removeItem('showWelcomePopup');
-    }
-
-    // Name logic
+    // optimistic display
     let resolvedName = user.displayName || cached || 'Welcome';
     welcomeNameEl.textContent = `Welcome! ${resolvedName}`;
 
+    // subscribe to subcollection doc: users/{uid}/editProfiles/profile
     try {
       const editRef = doc(db, 'users', user.uid, 'editProfiles', 'profile');
-      onSnapshot(
-        editRef,
-        (snap) => {
-          if (snap.exists() && snap.data().fullname) {
-            resolvedName = snap.data().fullname;
-          }
-          welcomeNameEl.textContent = `Welcome! ${resolvedName}`;
-          sessionStorage.setItem('fullname', resolvedName);
-          sessionStorage.setItem('fullnameUpdatedAt', Date.now());
-        },
-        async (err) => {
-          console.warn('profile snapshot err', err);
-          try {
-            const fallback = await getDoc(editRef);
-            if (fallback.exists() && fallback.data().fullname) {
-              resolvedName = fallback.data().fullname;
-            }
-          } catch (e) {}
-          welcomeNameEl.textContent = `Welcome, ${resolvedName}`;
+      onSnapshot(editRef, snap => {
+        if (snap.exists() && snap.data().fullname) {
+          resolvedName = snap.data().fullname;
         }
-      );
+        welcomeNameEl.textContent = `Welcome! ${resolvedName}`;
+        // cache small
+        sessionStorage.setItem('fullname', resolvedName);
+        sessionStorage.setItem('fullnameUpdatedAt', Date.now());
+      }, async (err) => {
+        console.warn('profile snapshot err', err);
+        // fallback to a single get if snapshot fails
+        try {
+          const fallback = await getDoc(editRef);
+          if (fallback.exists() && fallback.data().fullname) {
+            resolvedName = fallback.data().fullname;
+          }
+        } catch (e) { /* ignore */ }
+        welcomeNameEl.textContent = `Welcome, ${resolvedName}`;
+      });
     } catch (e) {
       console.warn('load profile err', e);
       welcomeNameEl.textContent = `Welcome, ${resolvedName}`;
     }
-
-    // ==== RECOMMENDATIONS FLOW ====
-    let usedLastSeed = false;
-
-    // 1️⃣ Instant recommendations from lastFavSeed (new user just liked book)
-    try {
-      const rawSeed = sessionStorage.getItem('lastFavSeed');
-      if (rawSeed) {
-        const seedBook = JSON.parse(rawSeed);
-        const recs = getSimilarFromCatalogue(seedBook);
-        renderBecauseYouLiked(seedBook, recs);
-        usedLastSeed = true;
-        sessionStorage.removeItem('lastFavSeed');
-      }
-    } catch (e) {
-      console.warn('[dash] lastFavSeed parse error', e);
-    }
-
-    // 2️⃣ If no lastFavSeed, old user ki one-shot load nundi rec
-    if (!usedLastSeed) {
-      await oneShotLoadRecommendations(user.uid);
-    }
-
-    // 3️⃣ Live favourites listener (new fav add / remove)
-    setupFavoritesListener(user.uid, usedLastSeed);
   });
 </script>
 
   <!-- optional: page scripts for books/search (if present in your project) -->
+  <script src="books.js"></script>
   <script src="dashboard-search.js" defer></script>
   <!--<script type="module" src="dashboard-search.js"></script>-->
 
