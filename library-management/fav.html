@@ -209,34 +209,65 @@
       }
 
       function subscribe(uid){
-        if(unsub){ try{ unsub(); }catch(e){} unsub = null; }
-        const q = query(favCollectionRef(uid), orderBy('addedAt','desc'));
-        unsub = onSnapshot(q, snap => {
-          const arr = snap.docs.map(d => d.data()).sort((a,b)=> (b.addedAt||0)-(a.addedAt||0));
-          bookListEl.innerHTML = '';
-          if(!arr.length){
-            bookListEl.innerHTML = `
-              <div class="empty-msg" role="status">
-                <i class="fa-solid fa-heart-crack" style="color:#c17c4a; font-size:1.6rem;"></i>
-                <div>You don't have favourites yet — add some from the dashboard.</div>
-              </div>`;
-            // mirror remote -> local as empty
-            try{ setFavsLocal(arr); } catch(e){}
-            return;
-          }
-          arr.forEach(docObj => {
-            const card = buildCard(docObj, async (id) => {
-              try { await deleteDoc(favDocRef(uid, id)); console.log('[remote fav] deleted', id); } catch(e){ console.error('delete fav error', e); }
-            });
-            bookListEl.appendChild(card);
-          });
-          // mirror remote to local
-          try { setFavsLocal(arr); } catch(e){ console.warn('mirror fav to local failed', e); }
-        }, err => {
-          console.error('fav snapshot err', err);
-          renderLocalFavs();
-        });
-      }
+  if (unsub) {
+    try { unsub(); } catch (e) {}
+    unsub = null;
+  }
+
+  const qSnap = query(favCollectionRef(uid), orderBy('addedAt','desc'));
+
+  unsub = onSnapshot(qSnap, snap => {
+    // 1️⃣ Normalise each document so it ALWAYS has a usable id + bookId
+    const arr = snap.docs.map(d => {
+      const data = d.data() || {};
+      const effectiveId     = data.id     || d.id;          // use doc.id if data.id missing
+      const effectiveBookId = data.bookId || data.id || d.id;
+
+      return {
+        ...data,
+        id: effectiveId,
+        bookId: effectiveBookId
+      };
+    }).sort((a,b) => (b.addedAt || 0) - (a.addedAt || 0));
+
+    // 2️⃣ Clear UI
+    bookListEl.innerHTML = '';
+
+    // 3️⃣ Empty state
+    if (!arr.length) {
+      bookListEl.innerHTML = `
+        <div class="empty-msg" role="status">
+          <i class="fa-solid fa-heart-crack" style="color:#c17c4a; font-size:1.6rem;"></i>
+          <div>You don't have favourites yet — add some from the dashboard.</div>
+        </div>`;
+      try { setFavsLocal(arr); } catch (e) {}
+      return;
+    }
+
+    // 4️⃣ Render cards with correct id for delete
+    arr.forEach(docObj => {
+      const card = buildCard(docObj, async (id) => {
+        try {
+          if (!id) return;  // safety
+          await deleteDoc(favDocRef(uid, id));
+          console.log('[remote fav] deleted', id);
+        } catch (e) {
+          console.error('delete fav error', e);
+        }
+      });
+      bookListEl.appendChild(card);
+    });
+
+    // 5️⃣ Mirror remote favourites to localStorage
+    try { setFavsLocal(arr); } catch (e) {
+      console.warn('mirror fav to local failed', e);
+    }
+  }, err => {
+    console.error('fav snapshot err', err);
+    // If Firestore fails, fallback to local-only view
+    renderLocalFavs();
+  });
+}
 
       onAuthStateChanged(auth, async (user) => {
         try {
@@ -255,8 +286,15 @@
 
       // helpers for remote operations from UI
       window.tryDeleteRemoteFav = async (id) => {
-        try { if(!currentUid) return; await deleteDoc(favDocRef(currentUid, id)); console.log('[remote fav] deleteDoc', id); } catch(e){ console.error('[remote fav] delete err', e); }
-      };
+  try {
+    if (!currentUid || !id) return;
+    await deleteDoc(favDocRef(currentUid, id));
+    console.log('[remote fav] deleteDoc', id);
+  } catch(e) {
+    console.error('[remote fav] delete err', e);
+  }
+};
+
 
       window.trySetRemoteFav = async (id, payload) => {
         try { if(!currentUid) return; await setDoc(favDocRef(currentUid, id), payload, { merge: true }); console.log('[remote fav] setDoc', id); } catch(e){ console.error('[remote fav] set err', e); }
