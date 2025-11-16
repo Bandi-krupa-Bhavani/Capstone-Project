@@ -65,6 +65,13 @@
         <p class="success-message" id="successMessage">✅ Registration successful!</p>
       </form>
 
+      <div class="or-divider">or</div>
+
+<!-- Google Sign Up Button -->
+<button type="button" class="google-btn">
+  <img src="css/assets/icons/google.jpeg" alt="Google Icon"> Continue with Google
+</button>
+
       <div class="signup-link">
         <p>Already have an account? <a href="login.html">Sign In</a></p>
       </div>
@@ -203,6 +210,35 @@ form.addEventListener("submit", async (e) => {
     }
   }
 });
+
+// ⭐ Google Sign Up (same as Sign In)
+import { provider } from "./firebase-config.js";
+import { signInWithPopup } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+document.querySelector(".google-btn").addEventListener("click", async () => {
+  try {
+    const result = await signInWithPopup(auth, provider);
+    const user = result.user;
+
+    // Save user details in Firestore (merge if exists)
+    await setDoc(doc(db, "users", user.uid), {
+      fullname: user.displayName,
+      email: user.email,
+      phone: user.phoneNumber || "",
+      createdAt: new Date(),
+      provider: "google"
+    }, { merge: true });
+
+    // Show welcome popup on dashboard
+    sessionStorage.setItem("showWelcomePopup", "1");
+
+    window.location.href = "dashboard.html";
+  } catch (error) {
+    console.error("Google Sign Up Error:", error);
+    errorMessageEl.textContent = "Google sign-up failed. Try again.";
+  }
+});
+
 </script>
 </body>
 </html>
