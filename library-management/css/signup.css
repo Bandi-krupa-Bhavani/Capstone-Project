@@ -1,3 +1,24 @@
+.back-home {
+  display: flex;
+  justify-content: flex-end;   /* right side lo kanipistundi */
+  margin-bottom: 3px;
+  margin-top: 3px;
+}
+
+.back-home a {
+  font-size: 0.95rem;
+  color: #8b6b5a;       /* slightly lighter */
+  opacity: 0.9;
+}
+.back-home a:hover {
+  text-decoration: underline;
+  opacity: 1;
+}
+
+.back-home a i {
+  margin-right: 4px;
+}
+
 /* ===============================================
    ✅ RESET & GLOBAL STYLES
 ================================================= */
@@ -89,7 +110,7 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  padding: 40px 40px 15px;
+  padding: 15px 40px 15px;
   transition: all 0.3s ease-in-out;
 
   /* ⭐ Add these 3 lines */

@@ -1,3 +1,25 @@
+.back-home {
+  display: flex;
+  justify-content: flex-end;   /* right side lo kanipistundi */
+  margin-bottom: 3px;
+  margin-top: 3px;
+}
+
+.back-home a {
+  font-size: 0.95rem;
+  color: #8b6b5a;       /* slightly lighter */
+  opacity: 0.9;
+}
+.back-home a:hover {
+  text-decoration: underline;
+  opacity: 1;
+}
+
+
+.back-home a i {
+  margin-right: 4px;
+}
+
 /* ================================ RESET & GLOBAL ================================== */ 
 * { 
   margin: 0; 
@@ -74,7 +96,7 @@
          display: flex; 
          flex-direction: column; 
          justify-content: center; 
-         padding: 80px 40px 40px; 
+         padding: 50px 40px 40px; 
         }
         
         .login-form h2 { 
