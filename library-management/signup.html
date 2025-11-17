@@ -80,9 +80,12 @@
   </div>
 
   <!-- JavaScript for real-time validation -->
-   <script type="module">
+<script type="module">
 import { auth, db } from "./firebase-config.js";
-import { createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {
+  createUserWithEmailAndPassword,
+  updateProfile        // ✅ NEW: to set displayName
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // Form elements
@@ -179,20 +182,46 @@ form.addEventListener("submit", async (e) => {
       registerBtn.disabled = true;
       registerBtn.textContent = "Registering...";
 
-      // Create user
-      const userCredential = await createUserWithEmailAndPassword(auth, email.value.trim(), password.value.trim());
+      const fullNameValue = fullname.value.trim();
+      const emailValue    = email.value.trim();
+      const phoneValue    = phone.value.trim();
 
-      // Save extra info in Firestore
-      await setDoc(doc(db, "users", userCredential.user.uid), {
-        fullname: fullname.value.trim(),
-        email: email.value.trim(),
-        phone: phone.value.trim(),
+      // 1️⃣ Create user (Auth)
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        emailValue,
+        password.value.trim()
+      );
+      const user = userCredential.user;
+
+      // 2️⃣ Set Firebase Auth displayName (so dashboard user.displayName works)
+      await updateProfile(user, {
+        displayName: fullNameValue
+      });
+
+      // 3️⃣ Top-level user doc (your existing one)
+      await setDoc(doc(db, "users", user.uid), {
+        fullname: fullNameValue,
+        email: emailValue,
+        phone: phoneValue,
         createdAt: new Date()
       });
+
+      // 4️⃣ 🔥 NEW: Create profile subdoc used by dashboard listener
+      await setDoc(doc(db, "users", user.uid, "editProfiles", "profile"), {
+        fullname: fullNameValue,
+        email: emailValue,
+        phone: phoneValue,
+        createdAt: new Date()
+      }, { merge: true });
+
+      // 5️⃣ (Optional) cache name in this browser session
+      sessionStorage.setItem("fullname", fullNameValue);
 
       successMessage.classList.add("show");
       registerBtn.textContent = "✔ Registered";
 
+      // You can redirect either to login.html or dashboard.html
       setTimeout(() => {
         window.location.href = "login.html";
       }, 2000);
@@ -220,7 +249,7 @@ document.querySelector(".google-btn").addEventListener("click", async () => {
     const result = await signInWithPopup(auth, provider);
     const user = result.user;
 
-    // Save user details in Firestore (merge if exists)
+    // Save user details in Firestore (top-level)
     await setDoc(doc(db, "users", user.uid), {
       fullname: user.displayName,
       email: user.email,
@@ -229,7 +258,16 @@ document.querySelector(".google-btn").addEventListener("click", async () => {
       provider: "google"
     }, { merge: true });
 
-    // Show welcome popup on dashboard
+    // 🔥 NEW: also create editProfiles/profile doc for consistency
+    await setDoc(doc(db, "users", user.uid, "editProfiles", "profile"), {
+      fullname: user.displayName,
+      email: user.email,
+      phone: user.phoneNumber || "",
+      createdAt: new Date()
+    }, { merge: true });
+
+    // cache name + popup flag
+    sessionStorage.setItem("fullname", user.displayName || "");
     sessionStorage.setItem("showWelcomePopup", "1");
 
     window.location.href = "dashboard.html";
@@ -238,7 +276,7 @@ document.querySelector(".google-btn").addEventListener("click", async () => {
     errorMessageEl.textContent = "Google sign-up failed. Try again.";
   }
 });
-
 </script>
+
 </body>
 </html>
