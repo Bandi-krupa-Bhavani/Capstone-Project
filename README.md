@@ -60,8 +60,6 @@ Random image + random caption
 
 Clean close button interaction
 
-🔊 (In Progress) Read-Aloud Mode
-
 PDF Viewer
 
 TTS Controls (Play, Pause, Resume, Seek)
