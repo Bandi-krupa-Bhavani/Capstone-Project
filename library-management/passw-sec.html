@@ -40,7 +40,7 @@
       <label>Current Password</label>
        <div class="password-field">
       <input type="password" id="currentPassword" placeholder="Enter current password">
-      <i class="fa-solid fa-eye-slash password-toggle"></i>
+      <i class="fa-solid fa-eye password-toggle"></i>
     </div>
     <div class="info" id="currentPasswordMsg"></div> <!-- Added -->
   </div>
@@ -48,13 +48,13 @@
       <label>New Password</label>
        <div class="password-field">
       <input type="password" id="newPassword" placeholder="Enter new password">
-      <i class="fa-solid fa-eye-slash password-toggle"></i>
+      <i class="fa-solid fa-eye password-toggle"></i>
     </div></div>
     <div class="form-group">
       <label>Confirm New Password</label>
        <div class="password-field">
       <input type="password" id="confirmPassword" placeholder="Confirm new password">
-      <i class="fa-solid fa-eye-slash password-toggle"></i>
+      <i class="fa-solid fa-eye password-toggle"></i>
     </div>
     <div class="info" id="confirmPasswordMsg"></div> <!-- Added -->
   </div>
@@ -260,10 +260,10 @@ document.querySelectorAll(".password-toggle").forEach((icon) => {
     const input = icon.previousElementSibling;
     if (input.type === "password") {
       input.type = "text";
-      icon.classList.replace("fa-eye-slash", "fa-eye");
+      icon.classList.replace("fa-eye", "fa-eye-slash");
     } else {
       input.type = "password";
-      icon.classList.replace("fa-eye", "fa-eye-slash");
+      icon.classList.replace("fa-eye-slash", "fa-eye");
     }
   });
 });
