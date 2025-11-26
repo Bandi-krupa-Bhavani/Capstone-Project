@@ -41,7 +41,7 @@
         <div class="input-group">
           <label for="loginPassword">Password</label>
           <input type="password" id="loginPassword" placeholder="Enter your password" required>
-          <i class="fa-solid fa-eye-slash password-toggle" id="togglePassword"></i>
+          <i class="fa-solid fa-eye password-toggle" id="togglePassword"></i>
           <small class="error" id="loginPasswordError"></small>
         </div>
         <p>
@@ -148,8 +148,8 @@
   togglePassword.addEventListener("click", () => {
     const type = loginPassword.getAttribute("type") === "password" ? "text" : "password";
     loginPassword.setAttribute("type", type);
-    togglePassword.classList.toggle("fa-eye");
     togglePassword.classList.toggle("fa-eye-slash");
+    togglePassword.classList.toggle("fa-eye");
   });
 
   // ✅ Auto-fill Remembered Email

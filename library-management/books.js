@@ -3,7 +3,7 @@ const BOOKVERSE_DATA = {
     "CS Fundamentals": [
       { id: "os-1", title: "Operating System", author: "Pooja Gupta", cover: "css/assets/covers/OS.png", href: "css/domains/OPERATING_SYSTEM.pdf", type: "pdf", year: 2016, tags: ["OS","Systems"] },
   { id: "dbms-1", title: "Database System Concepts (DBMS)", author: "Raghu Ramakrishnan", cover: "css/assets/covers/dbms.png", href: "css/domains/DBMS.pdf", type: "pdf", year: 2018, tags: ["DBMS","SQL"] },
-  { id: "cn-1", title: "Computer Networks", author: "James F. Kurose", cover: "css/assets/covers/cn.png", href: "css/domains/Computer Networks.pdf", type: "pdf", year: 2018, tags: ["Networks"] },
+  { id: "cn-1", title: "Computer Networks", author: "James F. Kurose", cover: "css/assets/covers/cn.png", href: "css/domains/Computer Networks.pdf", type: "pdf", year: 2018, tags: ["Networks","Communication"] },
   {
       id: "coa-1",
       title: "Computer Architecture",
@@ -66,7 +66,6 @@ const BOOKVERSE_DATA = {
     year: "2013",
     tags: ["Beginner-friendly", "Data Science", "Scripting"]
   },
-  ,
   {
     id: "cv-js",
     title: "JavaScript",
@@ -196,7 +195,7 @@ const BOOKVERSE_DATA = {
       year: "2014",
       tags: ["Electronics", "Circuits", "Components"]
     },
-    {
+     {
       id: "ee-signals",
       title: "Signals and Systems",
       author: "Alan V. Oppenheim & Alan S. Willsky",
@@ -354,7 +353,7 @@ const BOOKVERSE_DATA = {
     type: "pdf",
     year: "2014",
     tags: ["Health", "Accessibility", "Well-being"]
-  },,
+  },
   {
     id: "cv-healthy-lifestyle",
     title: "6 steps to a healthy lifestyle",
@@ -374,7 +373,7 @@ const BOOKVERSE_DATA = {
     type: "pdf",
     year: "2020",
     tags: ["Wellness", "Mental Health", "Self-care"]
-  }
+  },
     ],
     "Research Papers": [
       {
@@ -398,7 +397,7 @@ tags: ["Media", "Social Issues", "Digital"]
   },
   {
     id: "cv-open world",
-title: "Open-world Machine Learning",
+title: "Open‑world Machine Learning",
 cover: "css/assets/covers/open world.png",
 href: "css/domains/open world machine learning.pdf",
 type: "pdf",
